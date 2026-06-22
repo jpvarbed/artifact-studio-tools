@@ -53,9 +53,16 @@ Each app runs full-page on its own isolated origin with network access, so esm.s
 
 ## Install the skill
 
+Fastest, and what the [skills.sh](https://www.skills.sh) registry uses:
+
+```bash
+npx skills add jpvarbed/artifact-studio-tools   # installs the share-artifact skill
+```
+
+Or symlink it into a Claude Code agent dir from a checkout:
+
 ```bash
 ln -sfn "$PWD/skills/share-artifact" ~/.claude/skills/share-artifact
-# or: skills add https://github.com/jpvarbed/artifact-studio-tools --skill share-artifact -g
 ```
 
 ## Layout
