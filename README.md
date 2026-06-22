@@ -18,10 +18,11 @@ Publishing needs a key (reads are public, per app):
 2. Settings → API keys → Mint key. It's shown once, so copy it then.
 
 ```bash
-export ARTIFACT_API_BASE="https://amiable-crocodile-777.convex.site"
 export ARTIFACT_API_KEY="ak_…"
 bun install
 ```
+
+The CLI and MCP talk to the hosted studio by default. Set `ARTIFACT_API_BASE` only if you self-host.
 
 Now publish:
 

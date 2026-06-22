@@ -5,10 +5,11 @@ Publish apps to Artifact Studio from the terminal. Wraps the `/v1` HTTP API.
 ## Setup
 
 ```bash
-bun install                                              # from the repo root
-export ARTIFACT_API_BASE="https://amiable-crocodile-777.convex.site"
-export ARTIFACT_API_KEY="ak_…"   # mint at studio.artifacts.jasonv.dev → Settings
+bun install                          # from the repo root
+export ARTIFACT_API_KEY="ak_…"       # mint at studio.artifacts.jasonv.dev → Settings
 ```
+
+The CLI talks to the hosted studio by default; set `ARTIFACT_API_BASE` only to self-host.
 
 Run via `bun run cli <args>` (from the repo root) or `bun cli/src/index.ts <args>`. To get a
 global `artifact` command: `bun link` in `cli`, or alias it.

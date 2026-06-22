@@ -3,8 +3,8 @@
  * artifact — publish apps to Artifact Studio from the terminal.
  *
  * Env:
- *   ARTIFACT_API_BASE   e.g. https://<deployment>.convex.site   (required)
  *   ARTIFACT_API_KEY    an ak_… key minted in the studio Settings (required for writes)
+ *   ARTIFACT_API_BASE   optional — defaults to the hosted studio API; set it to self-host
  */
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { basename, extname, join, relative } from "node:path";
@@ -34,8 +34,8 @@ SHARE / DEPLOY OPTIONS
   --json                 print raw JSON instead of the URL
 
 ENV
-  ARTIFACT_API_BASE   https://<deployment>.convex.site   (required)
   ARTIFACT_API_KEY    ak_… key from the studio Settings   (required for writes)
+  ARTIFACT_API_BASE   optional; defaults to the hosted API, set it to self-host
 
 EXAMPLES
   artifact share diagram.svg --slug org-chart --visibility public
@@ -61,6 +61,9 @@ function env(name: string): string {
   if (!v) fail(`${name} is not set`);
   return v;
 }
+
+// The hosted studio API. Override ARTIFACT_API_BASE only to point at your own deployment.
+const DEFAULT_API_BASE = "https://amiable-crocodile-777.convex.site";
 
 const MIME: Record<string, string> = {
   html: "text/html; charset=utf-8", htm: "text/html; charset=utf-8",
@@ -97,7 +100,7 @@ function kindFromExt(file: string): string {
 }
 
 async function api(path: string, init: RequestInit & { auth?: boolean } = {}): Promise<any> {
-  const base = env("ARTIFACT_API_BASE").replace(/\/$/, "");
+  const base = (process.env.ARTIFACT_API_BASE ?? DEFAULT_API_BASE).replace(/\/$/, "");
   const headers: Record<string, string> = { "Content-Type": "application/json", ...(init.headers as any) };
   if (init.auth !== false) headers["Authorization"] = `Bearer ${env("ARTIFACT_API_KEY")}`;
   const res = await fetch(`${base}${path}`, { ...init, headers });

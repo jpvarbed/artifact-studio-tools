@@ -3,18 +3,19 @@
  * Artifact Studio MCP server (stdio). Lets any agent publish/manage apps.
  *
  * Env:
- *   ARTIFACT_API_BASE   https://<deployment>.convex.site   (required)
  *   ARTIFACT_API_KEY    ak_… key from the studio Settings   (required)
+ *   ARTIFACT_API_BASE   optional; defaults to the hosted API, set it to self-host
  */
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 
-const API_BASE = (process.env.ARTIFACT_API_BASE ?? "").replace(/\/$/, "");
+// The hosted studio API. Override ARTIFACT_API_BASE only to point at your own deployment.
+const DEFAULT_API_BASE = "https://amiable-crocodile-777.convex.site";
+const API_BASE = (process.env.ARTIFACT_API_BASE || DEFAULT_API_BASE).replace(/\/$/, "");
 const API_KEY = process.env.ARTIFACT_API_KEY ?? "";
 
 async function api(path: string, init: RequestInit & { auth?: boolean } = {}) {
-  if (!API_BASE) throw new Error("ARTIFACT_API_BASE is not set");
   const headers: Record<string, string> = { "Content-Type": "application/json", ...(init.headers as any) };
   if (init.auth !== false) {
     if (!API_KEY) throw new Error("ARTIFACT_API_KEY is not set");

@@ -16,10 +16,10 @@ place — same URL + token. `deploy_app` sends the full file set and prunes any 
 
 ## Configure
 
-The server reads two env vars:
+The server needs one env var:
 
-- `ARTIFACT_API_BASE` — `https://amiable-crocodile-777.convex.site`
 - `ARTIFACT_API_KEY` — mint at `studio.artifacts.jasonv.dev → Settings`
+- `ARTIFACT_API_BASE` — optional; defaults to the hosted API, set it to self-host
 
 ### Claude Code (`.mcp.json`) / Claude Desktop (`claude_desktop_config.json`)
 
@@ -30,7 +30,6 @@ The server reads two env vars:
       "command": "bun",
       "args": ["run", "/ABSOLUTE/PATH/TO/artifact-studio-tools/mcp/src/index.ts"],
       "env": {
-        "ARTIFACT_API_BASE": "https://amiable-crocodile-777.convex.site",
         "ARTIFACT_API_KEY": "ak_…"
       }
     }
@@ -44,5 +43,5 @@ app (no build) and get back a live `https://artifacts.jasonv.dev/<slug>/` URL.
 ## Smoke test
 
 ```bash
-ARTIFACT_API_BASE=… ARTIFACT_API_KEY=… bun run mcp/src/index.ts   # then speak JSON-RPC on stdin
+ARTIFACT_API_KEY=… bun run mcp/src/index.ts   # then speak JSON-RPC on stdin
 ```

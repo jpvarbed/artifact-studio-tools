@@ -15,9 +15,10 @@ Three surfaces wrap one API; this skill drives the CLI. (Repo: `jpvarbed/artifac
 From a checkout of the artifact-studio-tools repo (`bun install` once), export your credentials:
 
 ```bash
-export ARTIFACT_API_BASE="https://amiable-crocodile-777.convex.site"
 export ARTIFACT_API_KEY="ak_…"   # see below
 ```
+
+The CLI/MCP default to the hosted studio API; only set `ARTIFACT_API_BASE` to self-host.
 
 If the key is missing, tell the user: sign in at **studio.artifacts.jasonv.dev** (email → one-time
 link, no password), then **Settings → API keys → Mint key** (shown once). Apps published with that
