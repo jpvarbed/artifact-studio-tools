@@ -1,11 +1,11 @@
 ---
 name: build-artifact-app
-description: Use when building a real interactive web app to host on Artifact Studio (apps go live at artifacts.jasonv.dev/<slug>/), not just publishing a file you already made. Covers designing it, building it as a multi-file React app from esm.sh with no build step, adding the optional KV backend, and deploying + redeploying with the artifact CLI. Use whenever the task is "build and ship an app/tool/page" and the output should be a live URL.
+description: Use when building a real interactive web app to host on Artifact Studio (apps go live at <slug>.jasonv.app), not just publishing a file you already made. Covers designing it, building it as a multi-file React app from esm.sh with no build step, adding the optional KV backend, and deploying + redeploying with the artifact CLI. Use whenever the task is "build and ship an app/tool/page" and the output should be a live URL.
 ---
 
 # Build an Artifact Studio app
 
-Design, build, and ship a real app to a live URL at `artifacts.jasonv.dev/<slug>/`. Apps are multi-file static sites served full-page on their own origin with network access, so they load dependencies straight from a CDN. **There is no build step.** For publishing a one-off file you already made (an SVG, a Markdown page), use the `share-artifact` skill instead.
+Design, build, and ship a real app to a live URL at `<slug>.jasonv.app`. Apps are multi-file static sites served full-page on their own origin with network access, so they load dependencies straight from a CDN. **There is no build step.** For publishing a one-off file you already made (an SVG, a Markdown page), use the `share-artifact` skill instead.
 
 **Default to a multi-file React app from esm.sh.** A single self-contained HTML file is the exception, for something trivial. Real interactivity or more than ~100 lines means React + esm.sh.
 
@@ -19,7 +19,7 @@ Don't jump to code. Spend a moment on what you're building and how it should fee
 
 ## 2. Build — multi-file React from esm.sh (no bundler)
 
-A folder with `index.html` at the root, plus JS modules. Pin esm.sh versions. Use relative or CDN-absolute paths only (the app is served from `/<slug>/`, never the domain root).
+A folder with `index.html` at the root, plus JS modules. Pin esm.sh versions. Each app is served at the root of its own origin (`<slug>.jasonv.app`), so relative (`./app.js`), root-absolute (`/app.js`), and CDN (`https://…`) paths all resolve — relative is safest.
 
 `index.html`:
 
@@ -67,7 +67,7 @@ createRoot(document.getElementById("root")).render(html`<${App} />`);
 | --- | --- |
 | `&lt;slug&gt;` shows up literally in output | HTML entities in `htm` template literals render as text. Use a JS expression: `${"<slug>"}`. |
 | Bare `<script>` JSX | No build step. Use `htm`, or precompiled output. |
-| Absolute `/foo.js` 404s | App is served from `/<slug>/`. Use `./foo.js` or a full `https://` URL. |
+| Asset path confusion | Each app owns its origin (`<slug>.jasonv.app`), so `./foo.js`, `/foo.js`, and CDN URLs all work. Prefer relative. |
 | `import "react"` fails | Pin it in the importmap (`react@19.0.0`), don't rely on bare specifiers resolving. |
 | No `index.html` at root | `/` 404s. The root document must be `index.html`. |
 
@@ -96,7 +96,7 @@ Credentials: set `ARTIFACT_API_KEY` (mint one at studio.artifacts.jasonv.dev →
 bun run cli deploy ./my-app --slug my-app --visibility public --title "My App"
 ```
 
-Prints `https://artifacts.jasonv.dev/my-app/`. Unlisted links carry a `?k=` token.
+Prints `https://my-app.jasonv.app`. Unlisted links carry a `?k=` token.
 
 **Redeploy is the same command.** Re-run `deploy` with the same `--slug` to update in place: same URL, same token. It replaces changed files and prunes ones you deleted. Leave `--visibility` off to keep the current setting. The loop is build, deploy, tweak, deploy.
 

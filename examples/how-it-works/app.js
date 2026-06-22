@@ -6,7 +6,7 @@ const html = htm.bind(React.createElement);
 const REPO = "https://github.com/jpvarbed/artifact-studio-tools";
 
 const KINDS = [
-  { id: "site", name: "site", title: "Multi-file app (esm.sh, no build)", desc: "A real React/JS app — index.html plus modules and assets, served at its own path. Imports run straight from esm.sh, so there's no build step. This page is one.", ex: "deploy ./my-app  →  artifacts.jasonv.dev/my-app/" },
+  { id: "site", name: "site", title: "Multi-file app (esm.sh, no build)", desc: "A real React/JS app — index.html plus modules and assets, served at its own path. Imports run straight from esm.sh, so there's no build step. This page is one.", ex: "deploy ./my-app  →  my-app.jasonv.app" },
   { id: "html", name: "html", title: "Single self-contained page", desc: "One HTML file with inline CSS and JS. Great for a quick interactive widget or a one-off page you wrote by hand.", ex: "share page.html --kind html" },
   { id: "svg", name: "svg", title: "Vector graphic", desc: "A standalone SVG — a diagram, chart, or illustration — rendered full-page.", ex: "share org-chart.svg --kind svg" },
   { id: "markdown", name: "markdown", title: "Formatted document", desc: "A Markdown one-pager, rendered to clean styled HTML. Good for notes, specs, and write-ups.", ex: "share notes.md --kind markdown" },
@@ -15,8 +15,8 @@ const KINDS = [
 
 const VIS = [
   { id: "private", color: "#9499a2", who: "Only you, in your account.", url: null },
-  { id: "unlisted", color: "#ffd14a", who: "Anyone with the secret link. Send it to specific people — no account needed.", url: "artifacts.jasonv.dev/demo/?k=•••secret" },
-  { id: "public", color: "#5dcaa5", who: "Anyone, and it shows up in the Gallery.", url: "artifacts.jasonv.dev/demo/" },
+  { id: "unlisted", color: "#ffd14a", who: "Anyone with the secret link. Send it to specific people — no account needed.", url: "demo.jasonv.app/?k=•••secret" },
+  { id: "public", color: "#5dcaa5", who: "Anyone, and it shows up in the Gallery.", url: "demo.jasonv.app" },
 ];
 
 function Header() {
@@ -47,7 +47,7 @@ function Flow() {
   const steps = [
     { n: 1, h: "Build", p: html`An agent makes the thing — SVG, an HTML widget, or a multi-file React app pulling deps from esm.sh.` },
     { n: 2, h: "Publish", p: html`One call through the ${" "}<code>share-artifact</code> skill, the <code>artifact</code> CLI, or the MCP server.` },
-    { n: 3, h: "Share", p: html`It's live at <code>artifacts.jasonv.dev/${"<slug>"}/</code>, sandboxed on its own origin. Copy the link.` },
+    { n: 3, h: "Share", p: html`It's live at <code>${"<slug>.jasonv.app"}</code>, on its own isolated origin. Copy the link.` },
   ];
   return html`
     <section class="rise" style=${{ animationDelay: "120ms" }}>

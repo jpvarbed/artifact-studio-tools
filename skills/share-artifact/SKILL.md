@@ -1,11 +1,11 @@
 ---
 name: share-artifact
-description: Publish/host an app or artifact you built to Artifact Studio and get a public URL to share. Use after building an SVG/diagram, an interactive HTML widget, a Markdown one-pager, or a real multi-file React app (via esm.sh, no build) that you want to hand someone as a link — or when the user says "share this", "publish this", "host this", "give me a link", or "deploy this app". Apps go live at artifacts.jasonv.dev/<slug>/.
+description: Publish/host an app or artifact you built to Artifact Studio and get a public URL to share. Use after building an SVG/diagram, an interactive HTML widget, a Markdown one-pager, or a real multi-file React app (via esm.sh, no build) that you want to hand someone as a link — or when the user says "share this", "publish this", "host this", "give me a link", or "deploy this app". Apps go live at <slug>.jasonv.app.
 ---
 
 # Share / host an app on Artifact Studio
 
-Publishes to Artifact Studio and returns a public URL, `https://artifacts.jasonv.dev/<slug>/`.
+Publishes to Artifact Studio and returns a public URL, `https://<slug>.jasonv.app`.
 Three surfaces wrap one API; this skill drives the CLI. (Repo: `jpvarbed/artifact-studio-tools`.)
 
 **Announce at start:** "Using share-artifact to publish this."

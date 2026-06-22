@@ -1,14 +1,14 @@
 # Artifact Studio tools
 
-Your agent built something. Ship it. One command turns a folder of React, an SVG, or a Markdown page into a live URL at `artifacts.jasonv.dev/<slug>/`. No build step, no deploy config, no `vercel.json`.
+Your agent built something. Ship it. One command turns a folder of React, an SVG, or a Markdown page into a live URL at `<slug>.jasonv.app`. No build step, no deploy config, no `vercel.json`.
 
 This repo is how agents publish: a Claude **skill**, a **CLI**, and an **MCP server**. All three are thin clients over the studio's `/v1` HTTP API, so reach for whichever fits where you're working. The studio and backend live in a separate repo.
 
 ```
-build something  →  artifact deploy  →  https://artifacts.jasonv.dev/<slug>/
+build something  →  artifact deploy  →  https://<slug>.jasonv.app
 ```
 
-See it live at [artifacts.jasonv.dev/tour](https://artifacts.jasonv.dev/tour/). That page is a multi-file React app published with this CLI, and its source sits in [`examples/how-it-works/`](examples/how-it-works/) for you to copy.
+See it live at [tour.jasonv.app](https://tour.jasonv.app). That page is a multi-file React app published with this CLI, and its source sits in [`examples/how-it-works/`](examples/how-it-works/) for you to copy.
 
 ## Quickstart
 

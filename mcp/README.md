@@ -38,7 +38,7 @@ The server needs one env var:
 ```
 
 Run `bun install` in the repo first. Then an agent can call `deploy_app` to ship a React-on-esm.sh
-app (no build) and get back a live `https://artifacts.jasonv.dev/<slug>/` URL.
+app (no build) and get back a live `https://<slug>.jasonv.app` URL.
 
 ## Smoke test
 
