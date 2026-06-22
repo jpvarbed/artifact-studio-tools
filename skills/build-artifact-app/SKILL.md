@@ -5,7 +5,7 @@ description: Use when building a real interactive web app to host on Artifact St
 
 # Build an Artifact Studio app
 
-Design, build, and ship a real app to a live URL at `artifacts.jasonv.dev/<slug>/`. Apps are multi-file static sites served full-page on their own origin with network access, so they load dependencies straight from a CDN. **There is no build step.** For publishing a one-off file you already made (an SVG, a Markdown page), use [[share-artifact]] instead.
+Design, build, and ship a real app to a live URL at `artifacts.jasonv.dev/<slug>/`. Apps are multi-file static sites served full-page on their own origin with network access, so they load dependencies straight from a CDN. **There is no build step.** For publishing a one-off file you already made (an SVG, a Markdown page), use the `share-artifact` skill instead.
 
 **Default to a multi-file React app from esm.sh.** A single self-contained HTML file is the exception, for something trivial. Real interactivity or more than ~100 lines means React + esm.sh.
 
@@ -13,8 +13,8 @@ Design, build, and ship a real app to a live URL at `artifacts.jasonv.dev/<slug>
 
 Don't jump to code. Spend a moment on what you're building and how it should feel.
 
-- Shape the idea with **superpowers:brainstorming** if the ask is open-ended.
-- For look and feel, apply **frontend-design** (visual direction) and **make-interfaces-feel-better** (the details: concentric radii, tabular-nums, scale-on-press, staggered enter animations).
+- If the ask is open-ended, sketch the idea before coding (a brainstorming skill helps if you have one).
+- Make it feel built, not templated. A clear visual direction plus the small details that read as care: concentric border radii, `tabular-nums` on changing numbers, a subtle scale-on-press, staggered enter animations. (If you have `frontend-design` or `make-interfaces-feel-better` skills, use them.)
 - Decide: does it need to store data across visits? If yes, you need the KV backend (step 3).
 
 ## 2. Build — multi-file React from esm.sh (no bundler)
@@ -90,7 +90,7 @@ The key only exists after the app does, so it's a three-step bootstrap: `deploy`
 
 ## 4. Deploy
 
-Credentials: see [[share-artifact]] (key from bws or env; base defaults to the hosted API).
+Credentials: set `ARTIFACT_API_KEY` (mint one at studio.artifacts.jasonv.dev → Settings; the `share-artifact` skill has the details). The API base defaults to the hosted studio.
 
 ```bash
 bun run cli deploy ./my-app --slug my-app --visibility public --title "My App"

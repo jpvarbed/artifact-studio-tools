@@ -1,0 +1,15 @@
+id,area,user_story,expected_behavior,source,status,issues,fix,verified
+F1,onboarding,"As a friend, I want to clone and install so my agent can use the tools.","bun install at repo root installs cli+mcp workspaces.",package.json,verified,"fresh clone + bun install ok",,yes
+F2,onboarding,"As a friend, I want to get a key so I can publish.","README: sign in at studio, Settings → Mint key; only ARTIFACT_API_KEY needed (base defaults).",README.md,verified,"sign-in 200 + mint verified live; README accurate",,yes
+F3,cli,"As an agent, I want CLI help so I know the commands.","bun run cli --help prints usage for share/deploy/backend/list/get/delete.",cli/src/index.ts,verified,"usage printed",,yes
+F4,cli,"As an agent, I want to deploy a folder so I get a live multi-file app.","cli deploy <dir> --slug uploads files, prints artifacts.jasonv.dev/<slug>/.",cli/src/index.ts,verified,"deployed + 200",,yes
+F5,cli,"As an agent, I want to share a single file so I get a URL.","cli share <file> publishes svg/html/markdown.",cli/src/index.ts,verified,"md published + URL",,yes
+F6,cli,"As an agent, I want a KV backend so my app stores data.","cli backend <slug> prints a per-app data key.",cli/src/index.ts,verified,"key printed",,yes
+F7,cli,"As an agent, I want list/get/delete to manage apps.","list/get/delete hit /v1; get works without a key.",cli/src/index.ts,verified,"list=18 rows; get no-key ok; delete ok",,yes
+F8,cli,"As an agent, I want redeploy to update in place.","cli deploy same --slug updates, prunes removed files, prints updated.",cli/src/index.ts,verified,"printed '- a.js' + 'updated'",,yes
+F9,cli,"As a friend, I want it to work with only a key set.","ARTIFACT_API_BASE defaults to hosted; only ARTIFACT_API_KEY required.",cli/src/index.ts,verified,"all commands ran key-only, no base",,yes
+F10,mcp,"As an MCP client, I want the server to start and expose tools.","bun run mcp starts a stdio server with publish_artifact/deploy_app/etc.",mcp/src/index.ts,verified,"initialize+tools/list returned all 6 tools",,yes
+F11,skill,"As an external agent, I want share-artifact self-contained (no bws/abs paths).","public skill is BYO-key, no private deps.",skills/share-artifact/SKILL.md,verified,"grep: no bws/abs/wikilink leaks",,yes
+F12,skill,"As an external agent, I want build-artifact-app self-contained.","no bws, no unresolved wikilinks, soft-deps degrade gracefully.",skills/build-artifact-app/SKILL.md,verified,"had bws ref + [[wikilinks]] + hard skill-deps","replaced [[share-artifact]] with plain ref; dropped bws (ARTIFACT_API_KEY only); made brainstorming/frontend-design/make-interfaces optional 'if you have them'; kept the make-interfaces specifics inline; removed an em dash. re-grep clean",yes
+F13,examples,"As a friend, I want a worked example I can deploy.","examples/how-it-works deploys as a site and renders.",examples/how-it-works,verified,"deployed + 200",,yes
+F14,distribution,"As a friend, I want to install the skills via the registry.","skills add jpvarbed/artifact-studio-tools finds both skills.",README.md,verified,"Found 2 skills",,yes
