@@ -47,7 +47,7 @@ function Flow() {
   const steps = [
     { n: 1, h: "Build", p: html`An agent makes the thing — SVG, an HTML widget, or a multi-file React app pulling deps from esm.sh.` },
     { n: 2, h: "Publish", p: html`One call through the ${" "}<code>share-artifact</code> skill, the <code>artifact</code> CLI, or the MCP server.` },
-    { n: 3, h: "Share", p: html`It's live at <code>artifacts.jasonv.dev/&lt;slug&gt;/</code>, sandboxed on its own origin. Copy the link.` },
+    { n: 3, h: "Share", p: html`It's live at <code>artifacts.jasonv.dev/${"<slug>"}/</code>, sandboxed on its own origin. Copy the link.` },
   ];
   return html`
     <section class="rise" style=${{ animationDelay: "120ms" }}>
@@ -120,7 +120,7 @@ function Backend() {
         <pre><span class="c"># publish a multi-file React app, then add a KV store</span>
 <span class="k">artifact</span> deploy ./my-app --slug my-app --visibility public
 <span class="k">artifact</span> backend my-app
-<span class="c"># the app reads + writes at</span>  <span class="s">/api/kv/&lt;collection&gt;/&lt;key&gt;</span></pre>
+<span class="c"># the app reads + writes at</span>  <span class="s">${"/api/kv/<collection>/<key>"}</span></pre>
       </div>
     </section>`;
 }
