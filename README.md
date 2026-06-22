@@ -35,11 +35,20 @@ bun run cli list
 
 Whatever you publish belongs to your account and lands in the studio's Mine tab, next to what you build in the browser. Published with a key before you signed in? Settings, then Import existing apps, pulls them in.
 
+## Skills
+
+Two Claude skills, for the two halves of the job:
+
+| Skill | For |
+|---|---|
+| [`build-artifact-app`](skills/build-artifact-app/SKILL.md) | design, build (multi-file React via esm.sh, no build step), and ship a real app |
+| [`share-artifact`](skills/share-artifact/SKILL.md) | publish a one-off file you already made (SVG, HTML, Markdown) |
+
 ## Three ways in
 
 | Surface | Use it | Docs |
 |---|---|---|
-| Skill `share-artifact` | inside a Claude session | [`skills/share-artifact`](skills/share-artifact/SKILL.md) |
+| Skills (above) | inside a Claude session | [`skills/`](skills/) |
 | `artifact` CLI | terminals, scripts, agents | [`cli/`](cli/README.md) |
 | MCP server | any MCP client | [`mcp/`](mcp/README.md) |
 
