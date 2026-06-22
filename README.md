@@ -9,6 +9,10 @@ the app/service itself lives elsewhere.
 build something  →  publish  →  https://artifacts.jasonv.dev/<slug>/
 ```
 
+**▶ See it in action: [artifacts.jasonv.dev/how-it-works](https://artifacts.jasonv.dev/how-it-works/)** —
+a live walkthrough of the whole flow that is *itself* a multi-file React app published with this CLI.
+Its source is a worked example you can copy: [`examples/how-it-works/`](examples/how-it-works/).
+
 ## Get a key
 
 Reads are public (per app visibility); publishing needs a key.
