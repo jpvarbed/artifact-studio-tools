@@ -67,7 +67,8 @@ bun run cli backend <slug>     # prints a per-app data key (shown once)
 
 From the app's frontend (same origin): `fetch("/api/kv/<collection>/<key>", { method:"PUT",
 headers:{ "X-App-Key": KEY }, body: JSON.stringify(v) })` (GET → `{value}`; `/api/kv/<collection>`
-lists). Shared storage, not per-end-user-private.
+lists). App-shared by default; add an `X-End-User: <per-visitor-secret>` header to make rows private
+to that visitor (ART-5). See the build-artifact-app skill for the per-user pattern.
 
 ## Manage
 

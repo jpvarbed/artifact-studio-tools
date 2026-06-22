@@ -80,13 +80,28 @@ bun run cli backend <slug>     # prints a per-app data key (shown once); embed i
 ```
 
 ```js
-await fetch("/api/kv/scores/alice", {
+await fetch("/api/kv/scores/top", {
   method: "PUT", headers: { "X-App-Key": KEY }, body: JSON.stringify(value),
 });
-// GET → { value }; GET /api/kv/<collection> lists. Shared storage, not per-end-user-private.
+// GET → { value }; GET /api/kv/<collection> lists. No X-End-User = app-shared data.
 ```
 
-The key only exists after the app does, so it's a three-step bootstrap: `deploy` once, run `backend <slug>` to get the key, embed it, then `deploy` again. After that, normal redeploys.
+**Per-user data (ART-5).** Send an `X-End-User` header and the rows become private to that visitor.
+Mint a per-visitor secret once and keep it in `localStorage` — different visitors can't see each
+other's data, and the same visitor gets theirs back on return:
+
+```js
+const EU = localStorage.getItem("eu") ?? (() => { const v = crypto.randomUUID(); localStorage.setItem("eu", v); return v; })();
+const h = { "X-App-Key": KEY, "X-End-User": EU };
+await fetch("/api/kv/notes/draft", { method: "PUT", headers: h, body: JSON.stringify(text) });
+const { value } = await (await fetch("/api/kv/notes/draft", { headers: h })).json();
+```
+
+It's capability-based, not a login: the id is a secret per device (not cross-device, not authenticated).
+Drop `X-End-User` for shared state (leaderboards, global counters); include it for "my stuff."
+
+The data key only exists after the app does, so it's a three-step bootstrap: `deploy` once, run
+`backend <slug>` to get the key, embed it, then `deploy` again. After that, normal redeploys.
 
 ## 4. Deploy
 
