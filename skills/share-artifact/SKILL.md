@@ -31,9 +31,12 @@ bun run cli share <file> --slug <slug> [--kind svg|html|markdown] [--title "..."
   [--visibility private|unlisted|public] [--comments]
 ```
 
-`--kind` is inferred from the extension. `--slug` is the URL and must be globally unique
-(`taken`/`reserved` → pick another). Default visibility `unlisted` (link includes a `?k=` token).
-Prints the URL — hand it back.
+`--kind` is inferred from the extension. `--slug` is the URL. Default visibility `unlisted` (link
+includes a `?k=` token). Prints the URL — hand it back.
+
+**To update an existing app, re-run with the same `--slug`** — it updates in place (same URL + token),
+not a new app. A slug you don't own or a retired one errors `taken` (pick another). Options you omit
+are preserved, so to keep the current visibility just leave `--visibility` off.
 
 ## Deploy a multi-file app — real React, no build step (esm.sh)
 
@@ -50,6 +53,9 @@ Then deploy the folder (must contain `index.html`; use relative or CDN-absolute 
 ```bash
 bun run cli deploy <dir> --slug <slug> [--title "..."] [--visibility ...] [--comments]
 ```
+
+Re-running `deploy` with the same `--slug` updates the app in place (same URL + token) and removes
+files no longer in the folder. Prints `created`/`updated <slug>` and `- <path>` for each pruned file.
 
 ## Optional managed backend (per-app key-value store)
 

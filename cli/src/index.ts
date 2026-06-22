@@ -12,19 +12,24 @@ import { basename, extname, join, relative } from "node:path";
 const HELP = `artifact — publish apps to Artifact Studio
 
 USAGE
-  artifact share <file> [options]      publish a single file, print its URL
-  artifact deploy <dir> [options]      deploy a multi-file site (esm.sh-style, no build)
+  artifact share <file> [options]      publish (or update) a single file, print its URL
+  artifact deploy <dir> [options]      deploy (or update) a multi-file site (esm.sh-style, no build)
   artifact backend <slug>              provision a managed KV backend; prints the per-app data key
   artifact list                        list your apps
   artifact get <slug>                  print one app's metadata
   artifact delete <slug>               delete an app
   artifact --help
 
-SHARE OPTIONS
-  --slug <slug>          subdomain label (default: from filename)
+REDEPLOY
+  Re-run share/deploy with the same --slug to UPDATE an app in place: same URL, same token.
+  deploy also removes files no longer in the folder. Options you omit are preserved (e.g. leave
+  off --visibility and the current visibility stays); pass an option to change it.
+
+SHARE / DEPLOY OPTIONS
+  --slug <slug>          subdomain label (default: from filename/dir)
   --kind <kind>          svg|html|markdown (default: inferred from extension)
   --title <title>        human title
-  --visibility <v>       private|unlisted|public (default: unlisted)
+  --visibility <v>       private|unlisted|public (default on first publish: unlisted)
   --comments             enable comments
   --json                 print raw JSON instead of the URL
 
@@ -118,13 +123,14 @@ async function share(args: string[]) {
     kind,
     title: flag(args, "title"),
     content,
-    visibility: flag(args, "visibility") ?? "unlisted",
-    commentsEnabled: has(args, "comments"),
+    visibility: flag(args, "visibility"), // omit → server defaults (new) or preserves (update)
+    commentsEnabled: has(args, "comments") ? true : undefined,
     csp: flag(args, "csp"),
   };
   const out = await api("/v1/apps", { method: "POST", body: JSON.stringify(body) });
+  process.stderr.write(`${out.updated ? "updated" : "created"} ${out.slug}\n`);
   if (has(args, "json")) console.log(JSON.stringify(out, null, 2));
-  else console.log(out.url + (body.visibility === "unlisted" ? `?k=${out.token}` : ""));
+  else console.log(out.url + (out.visibility === "unlisted" ? `?k=${out.token}` : ""));
 }
 
 async function deploy(args: string[]) {
@@ -146,14 +152,16 @@ async function deploy(args: string[]) {
     body: JSON.stringify({
       slug,
       title: flag(args, "title"),
-      visibility: flag(args, "visibility") ?? "unlisted",
-      commentsEnabled: has(args, "comments"),
+      visibility: flag(args, "visibility"), // omit → server defaults (new) or preserves (update)
+      commentsEnabled: has(args, "comments") ? true : undefined,
       csp: flag(args, "csp"),
     }),
   });
 
+  const localPaths = new Set<string>();
   for (const full of files) {
     const path = relative(dir, full).split("\\").join("/");
+    localPaths.add(path);
     const bytes = readFileSync(full);
     const ct = mimeFor(path);
     const { url } = await api("/v1/uploads", { method: "POST" });
@@ -166,9 +174,20 @@ async function deploy(args: string[]) {
     process.stderr.write(`  + ${path}\n`);
   }
 
-  const visibility = flag(args, "visibility") ?? "unlisted";
+  // On update, prune files that are live on the server but no longer in the folder.
+  if (site.updated) {
+    const { files: remote } = await api(`/v1/sites/${encodeURIComponent(site.slug)}/files`, { method: "GET" });
+    for (const f of remote as { path: string }[]) {
+      if (!localPaths.has(f.path)) {
+        await api(`/v1/sites/${encodeURIComponent(site.slug)}/files?path=${encodeURIComponent(f.path)}`, { method: "DELETE" });
+        process.stderr.write(`  - ${f.path}\n`);
+      }
+    }
+  }
+
+  process.stderr.write(`${site.updated ? "updated" : "created"} ${site.slug}\n`);
   if (has(args, "json")) console.log(JSON.stringify({ ...site, files: files.length }, null, 2));
-  else console.log(site.url + (visibility === "unlisted" ? `?k=${site.token}` : ""));
+  else console.log(site.url + (site.visibility === "unlisted" ? `?k=${site.token}` : ""));
 }
 
 async function backend(args: string[]) {

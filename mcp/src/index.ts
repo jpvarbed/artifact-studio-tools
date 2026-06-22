@@ -34,20 +34,20 @@ const server = new McpServer({ name: "artifact-studio", version: "1.0.0" });
 
 server.tool(
   "publish_artifact",
-  "Publish an app to Artifact Studio and return its public URL. Use for svg, html, or markdown content.",
+  "Publish (or update) an app on Artifact Studio and return its public URL. Use for svg, html, or markdown content. Re-using a slug you own UPDATES it in place (same URL + token); omitted options like visibility are preserved.",
   {
-    slug: z.string().describe("Subdomain label, e.g. 'org-chart'. Slugified and must be unique."),
+    slug: z.string().describe("Subdomain label, e.g. 'org-chart'. Slugified. Re-use your own slug to update in place."),
     kind: z.enum(["svg", "html", "markdown"]),
     content: z.string().describe("The full artifact content (SVG/HTML/Markdown source)."),
     title: z.string().optional(),
-    visibility: z.enum(["private", "unlisted", "public"]).optional().describe("Default unlisted."),
+    visibility: z.enum(["private", "unlisted", "public"]).optional().describe("Default unlisted on first publish; preserved on update."),
     commentsEnabled: z.boolean().optional(),
   },
   async (args) => {
     try {
       const out = await api("/v1/apps", { method: "POST", body: JSON.stringify(args) });
-      const url = out.url + ((args.visibility ?? "unlisted") === "unlisted" ? `?k=${out.token}` : "");
-      return ok({ slug: out.slug, url });
+      const url = out.url + (out.visibility === "unlisted" ? `?k=${out.token}` : "");
+      return ok({ slug: out.slug, url, updated: out.updated });
     } catch (e) {
       return err(e);
     }
@@ -64,12 +64,12 @@ const mimeFor = (p: string) => MIME[p.split(".").pop()?.toLowerCase() ?? ""] ?? 
 
 server.tool(
   "deploy_app",
-  "Deploy a multi-file web app (esm.sh-style, no build step). Provide text files like index.html + JS modules that import deps from https://esm.sh at runtime. Returns the live URL.",
+  "Deploy (or update) a multi-file web app (esm.sh-style, no build step). Provide text files like index.html + JS modules that import deps from https://esm.sh at runtime. Re-using a slug you own UPDATES the app in place (same URL + token) and removes files no longer in the list. Omitted options (e.g. visibility) are preserved. Returns the live URL.",
   {
-    slug: z.string().describe("Subdomain label; slugified, must be unique."),
+    slug: z.string().describe("Subdomain label; slugified. Re-use your own slug to update in place."),
     files: z
       .array(z.object({ path: z.string().describe("e.g. index.html, app.js"), content: z.string() }))
-      .describe("All files of the app. Must include index.html at the root."),
+      .describe("The complete file set of the app (a redeploy replaces all files and prunes the rest). Must include index.html at the root."),
     title: z.string().optional(),
     visibility: z.enum(["private", "unlisted", "public"]).optional(),
     commentsEnabled: z.boolean().optional(),
@@ -83,18 +83,31 @@ server.tool(
         method: "POST",
         body: JSON.stringify({ slug, title, visibility, commentsEnabled, csp }),
       });
+      const localPaths = new Set<string>();
       for (const f of files) {
-        const ct = mimeFor(f.path);
+        const path = f.path.replace(/^\//, "") || "index.html";
+        localPaths.add(path);
+        const ct = mimeFor(path);
         const { url } = await api("/v1/uploads", { method: "POST" });
         const up = await fetch(url, { method: "POST", headers: { "Content-Type": ct }, body: f.content });
         const { storageId } = await up.json();
         await api(`/v1/sites/${encodeURIComponent(site.slug)}/files`, {
           method: "POST",
-          body: JSON.stringify({ path: f.path, storageId, size: f.content.length, contentType: ct }),
+          body: JSON.stringify({ path, storageId, size: f.content.length, contentType: ct }),
         });
       }
-      const url = site.url + ((visibility ?? "unlisted") === "unlisted" ? `?k=${site.token}` : "");
-      return ok({ slug: site.slug, url, files: files.length });
+      let pruned = 0;
+      if (site.updated) {
+        const { files: remote } = await api(`/v1/sites/${encodeURIComponent(site.slug)}/files`, { method: "GET" });
+        for (const r of remote as { path: string }[]) {
+          if (!localPaths.has(r.path)) {
+            await api(`/v1/sites/${encodeURIComponent(site.slug)}/files?path=${encodeURIComponent(r.path)}`, { method: "DELETE" });
+            pruned++;
+          }
+        }
+      }
+      const url = site.url + (site.visibility === "unlisted" ? `?k=${site.token}` : "");
+      return ok({ slug: site.slug, url, files: files.length, updated: site.updated, pruned });
     } catch (e) {
       return err(e);
     }
