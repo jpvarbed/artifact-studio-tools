@@ -11,8 +11,15 @@ build something  →  publish  →  https://artifacts.jasonv.dev/<slug>/
 
 ## Get a key
 
-Reads are public (per app visibility); publishing needs a key. Mint one at
-**studio.artifacts.jasonv.dev → Settings** (shown once), then:
+Reads are public (per app visibility); publishing needs a key.
+
+1. **Sign in** to [studio.artifacts.jasonv.dev](https://studio.artifacts.jasonv.dev) — enter your
+   email, click the one-time link (no password).
+2. Go to **Settings → API keys → Mint key**. The key is shown once — copy it now.
+
+Apps published with a key belong to your account, so they show up in your studio **Mine** tab
+alongside anything you make in the browser. (Already published with a key before signing in?
+Settings → **Import existing apps** pulls them in.) Then:
 
 ```bash
 export ARTIFACT_API_BASE="https://amiable-crocodile-777.convex.site"

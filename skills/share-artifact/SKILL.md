@@ -16,10 +16,12 @@ From a checkout of the artifact-studio-tools repo (`bun install` once), export y
 
 ```bash
 export ARTIFACT_API_BASE="https://amiable-crocodile-777.convex.site"
-export ARTIFACT_API_KEY="ak_…"   # mint at studio.artifacts.jasonv.dev → Settings (shown once)
+export ARTIFACT_API_KEY="ak_…"   # see below
 ```
 
-If the key is missing, tell the user to mint one in the studio's **Settings** page. Run the CLI as
+If the key is missing, tell the user: sign in at **studio.artifacts.jasonv.dev** (email → one-time
+link, no password), then **Settings → API keys → Mint key** (shown once). Apps published with that
+key belong to their account and appear in the studio **Mine** tab. Run the CLI as
 `bun run cli <args>` from the repo root (or `bun cli/src/index.ts <args>`).
 
 ## Publish a single file (svg / html / markdown)
