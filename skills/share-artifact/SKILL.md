@@ -55,8 +55,9 @@ Then deploy the folder (must contain `index.html`; use relative or CDN-absolute 
 bun run cli deploy <dir> --slug <slug> [--title "..."] [--visibility ...] [--comments]
 ```
 
-Re-running `deploy` with the same `--slug` updates the app in place (same URL + token) and removes
-files no longer in the folder. Prints `created`/`updated <slug>` and `- <path>` for each pruned file.
+Re-running `deploy` with the same `--slug` deploys a new immutable version (same URL + token); files
+you drop from the folder are simply absent in the new version. Undo with `artifact rollback <slug>`;
+preview with `deploy --staging` then `artifact promote <slug>`. `artifact versions <slug>` lists them.
 
 ## Optional managed backend (per-app key-value store)
 

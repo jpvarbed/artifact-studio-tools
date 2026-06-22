@@ -19,6 +19,10 @@ global `artifact` command: `bun link` in `cli`, or alias it.
 ```
 artifact share <file>  [options]   publish a single file (svg|html|markdown), print its URL
 artifact deploy <dir>  [options]   deploy a multi-file site (esm.sh-style, no build)
+artifact deploy <dir>  --staging   deploy to the staging origin (<slug>--staging.<domain>)
+artifact promote <slug>            promote the staged version to live
+artifact rollback <slug> [version] roll live back to an earlier (or the previous) version
+artifact versions <slug>           list versions (live/staging marked)
 artifact backend <slug>            provision a managed KV backend; prints the per-app data key
 artifact list                      list your apps
 artifact get <slug>                print one app's metadata
@@ -29,12 +33,13 @@ artifact --help
 **Options** (share/deploy): `--slug <slug>` (the URL; default from filename/dir),
 `--kind svg|html|markdown` (share only; inferred from extension), `--title "..."`,
 `--visibility private|unlisted|public` (default `unlisted` on first publish), `--comments`,
-`--csp "<policy>"`, `--json`.
+`--csp "<policy>"`, `--staging` (deploy only), `--json`.
 
-**Redeploy / update:** run `share`/`deploy` again with the same `--slug` to update in place — same
-URL, same token. `deploy` also removes files no longer in the folder. Options you omit are preserved
-(leave off `--visibility` and the current setting stays); pass one to change it. The command prints
-`created <slug>` or `updated <slug>` (and `- path` for each pruned file) to stderr.
+**Redeploy & versions (ADR-0009):** run `share`/`deploy` again with the same `--slug` to deploy a new
+immutable version — same URL, same token. Files you drop from the folder are simply absent in the new
+version (no prune step). Roll back a bad deploy with `artifact rollback`; preview with `deploy
+--staging` then `promote`. Options you omit are preserved (leave off `--visibility` and the current
+one stays). `deploy` prints `created`/`updated <slug> (vN)`.
 
 ## Examples
 

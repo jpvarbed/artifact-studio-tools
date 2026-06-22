@@ -14,16 +14,21 @@ const HELP = `artifact — publish apps to Artifact Studio
 USAGE
   artifact share <file> [options]      publish (or update) a single file, print its URL
   artifact deploy <dir> [options]      deploy (or update) a multi-file site (esm.sh-style, no build)
+  artifact deploy <dir> --staging      deploy to the staging origin (<slug>--staging.<domain>)
+  artifact promote <slug>              promote the staged version to live
+  artifact rollback <slug> [version]   roll live back to an earlier (or the previous) version
+  artifact versions <slug>             list an app's versions (live/staging marked)
   artifact backend <slug>              provision a managed KV backend; prints the per-app data key
   artifact list                        list your apps
   artifact get <slug>                  print one app's metadata
   artifact delete <slug>               delete an app
   artifact --help
 
-REDEPLOY
-  Re-run share/deploy with the same --slug to UPDATE an app in place: same URL, same token.
-  deploy also removes files no longer in the folder. Options you omit are preserved (e.g. leave
-  off --visibility and the current visibility stays); pass an option to change it.
+REDEPLOY & VERSIONS
+  Re-run share/deploy with the same --slug to UPDATE in place: same URL, same token. Each deploy is
+  an immutable version; files you drop from the folder just aren't in the new version (no prune).
+  Roll back a bad deploy with "artifact rollback". Preview before going live with "deploy --staging"
+  then "promote". Options you omit are preserved (leave off --visibility and the current one stays).
 
 SHARE / DEPLOY OPTIONS
   --slug <slug>          subdomain label (default: from filename/dir)
@@ -150,6 +155,9 @@ async function deploy(args: string[]) {
     process.stderr.write("warning: no index.html at the site root — '/' will 404\n");
 
   const slug = flag(args, "slug") ?? basename(dir.replace(/\/$/, ""));
+  const staging = has(args, "staging");
+  // Each deploy is a fresh immutable version (ADR-0009), so removed files just aren't re-uploaded —
+  // no prune step. --staging deploys to the staging origin, leaving live untouched.
   const site = await api("/v1/sites", {
     method: "POST",
     body: JSON.stringify({
@@ -158,13 +166,12 @@ async function deploy(args: string[]) {
       visibility: flag(args, "visibility"), // omit → server defaults (new) or preserves (update)
       commentsEnabled: has(args, "comments") ? true : undefined,
       csp: flag(args, "csp"),
+      staging: staging ? true : undefined,
     }),
   });
 
-  const localPaths = new Set<string>();
   for (const full of files) {
     const path = relative(dir, full).split("\\").join("/");
-    localPaths.add(path);
     const bytes = readFileSync(full);
     const ct = mimeFor(path);
     const { url } = await api("/v1/uploads", { method: "POST" });
@@ -177,20 +184,42 @@ async function deploy(args: string[]) {
     process.stderr.write(`  + ${path}\n`);
   }
 
-  // On update, prune files that are live on the server but no longer in the folder.
-  if (site.updated) {
-    const { files: remote } = await api(`/v1/sites/${encodeURIComponent(site.slug)}/files`, { method: "GET" });
-    for (const f of remote as { path: string }[]) {
-      if (!localPaths.has(f.path)) {
-        await api(`/v1/sites/${encodeURIComponent(site.slug)}/files?path=${encodeURIComponent(f.path)}`, { method: "DELETE" });
-        process.stderr.write(`  - ${f.path}\n`);
-      }
-    }
-  }
-
-  process.stderr.write(`${site.updated ? "updated" : "created"} ${site.slug}\n`);
+  const verb = site.updated ? "updated" : "created";
+  process.stderr.write(`${verb} ${site.slug}  (v${site.version}${site.target === "staging" ? ", staging" : ""})\n`);
+  // staging deploys preview at <slug>--staging.<domain>; live deploys at the canonical URL.
+  const liveUrl = site.url + (site.visibility === "unlisted" ? `?k=${site.token}` : "");
+  const stageUrl = site.url.replace(/^https:\/\/([^.]+)\./, "https://$1--staging.");
   if (has(args, "json")) console.log(JSON.stringify({ ...site, files: files.length }, null, 2));
-  else console.log(site.url + (site.visibility === "unlisted" ? `?k=${site.token}` : ""));
+  else console.log(staging ? stageUrl + "   (run: artifact promote " + site.slug + ")" : liveUrl);
+}
+
+async function promote(args: string[]) {
+  const slug = args[1];
+  if (!slug) fail("usage: artifact promote <slug>");
+  const r = await api(`/v1/sites/${encodeURIComponent(slug)}/promote`, { method: "POST" });
+  console.log(`promoted ${slug} → live is now v${r.live}`);
+}
+
+async function rollback(args: string[]) {
+  const slug = args[1];
+  if (!slug) fail("usage: artifact rollback <slug> [version]");
+  const n = flag(args, "to") ?? args[2];
+  const r = await api(`/v1/sites/${encodeURIComponent(slug)}/rollback`, {
+    method: "POST",
+    body: JSON.stringify({ n: n ? Number(n) : undefined }),
+  });
+  console.log(`rolled back ${slug} → live is now v${r.live}`);
+}
+
+async function versions(args: string[]) {
+  const slug = args[1];
+  if (!slug) fail("usage: artifact versions <slug>");
+  const r = await api(`/v1/sites/${encodeURIComponent(slug)}/versions`, { method: "GET" });
+  if (has(args, "json")) return void console.log(JSON.stringify(r, null, 2));
+  for (const v of r.versions as { n: number; createdAt: number }[]) {
+    const tag = v.n === r.live ? " (live)" : v.n === r.staging ? " (staging)" : "";
+    console.log(`v${v.n}\t${new Date(v.createdAt).toISOString()}${tag}`);
+  }
 }
 
 async function backend(args: string[]) {
@@ -231,6 +260,6 @@ if (!cmd || cmd === "--help" || cmd === "-h") {
   process.stdout.write(HELP);
   process.exit(0);
 }
-const run = { share, deploy, backend, list, get, delete: del }[cmd as "share"];
+const run = { share, deploy, backend, list, get, delete: del, promote, rollback, versions }[cmd as "share"];
 if (!run) fail(`unknown command: ${cmd} (try --help)`);
 await run(args);

@@ -65,29 +65,28 @@ const mimeFor = (p: string) => MIME[p.split(".").pop()?.toLowerCase() ?? ""] ?? 
 
 server.tool(
   "deploy_app",
-  "Deploy (or update) a multi-file web app (esm.sh-style, no build step). Provide text files like index.html + JS modules that import deps from https://esm.sh at runtime. Re-using a slug you own UPDATES the app in place (same URL + token) and removes files no longer in the list. Omitted options (e.g. visibility) are preserved. Returns the live URL.",
+  "Deploy (or update) a multi-file web app (esm.sh-style, no build step). Provide text files like index.html + JS modules that import deps from https://esm.sh at runtime. Each deploy is an immutable VERSION (ADR-0009): re-using a slug you own creates a new version (same URL + token) — files dropped from the list are simply absent in the new version (no prune). Pass staging:true to deploy to <slug>--staging.<domain> without touching live, then promote_app. Omitted options (e.g. visibility) are preserved. Returns the live URL + version.",
   {
-    slug: z.string().describe("Subdomain label; slugified. Re-use your own slug to update in place."),
+    slug: z.string().describe("Subdomain label; slugified. Re-use your own slug to deploy a new version."),
     files: z
       .array(z.object({ path: z.string().describe("e.g. index.html, app.js"), content: z.string() }))
-      .describe("The complete file set of the app (a redeploy replaces all files and prunes the rest). Must include index.html at the root."),
+      .describe("The complete file set for this version. Must include index.html at the root."),
     title: z.string().optional(),
     visibility: z.enum(["private", "unlisted", "public"]).optional(),
     commentsEnabled: z.boolean().optional(),
     csp: z.string().optional().describe("Optional CSP to lock the app down; overrides the permissive default."),
+    staging: z.boolean().optional().describe("Deploy to the staging origin instead of live."),
   },
-  async ({ slug, files, title, visibility, commentsEnabled, csp }) => {
+  async ({ slug, files, title, visibility, commentsEnabled, csp, staging }) => {
     try {
       if (!files.some((f) => f.path.replace(/^\//, "") === "index.html"))
         return err("files must include an index.html at the root");
       const site = await api("/v1/sites", {
         method: "POST",
-        body: JSON.stringify({ slug, title, visibility, commentsEnabled, csp }),
+        body: JSON.stringify({ slug, title, visibility, commentsEnabled, csp, staging }),
       });
-      const localPaths = new Set<string>();
       for (const f of files) {
         const path = f.path.replace(/^\//, "") || "index.html";
-        localPaths.add(path);
         const ct = mimeFor(path);
         const { url } = await api("/v1/uploads", { method: "POST" });
         const up = await fetch(url, { method: "POST", headers: { "Content-Type": ct }, body: f.content });
@@ -97,21 +96,41 @@ server.tool(
           body: JSON.stringify({ path, storageId, size: f.content.length, contentType: ct }),
         });
       }
-      let pruned = 0;
-      if (site.updated) {
-        const { files: remote } = await api(`/v1/sites/${encodeURIComponent(site.slug)}/files`, { method: "GET" });
-        for (const r of remote as { path: string }[]) {
-          if (!localPaths.has(r.path)) {
-            await api(`/v1/sites/${encodeURIComponent(site.slug)}/files?path=${encodeURIComponent(r.path)}`, { method: "DELETE" });
-            pruned++;
-          }
-        }
-      }
       const url = site.url + (site.visibility === "unlisted" ? `?k=${site.token}` : "");
-      return ok({ slug: site.slug, url, files: files.length, updated: site.updated, pruned });
+      return ok({ slug: site.slug, url, files: files.length, updated: site.updated, version: site.version, target: site.target });
     } catch (e) {
       return err(e);
     }
+  },
+);
+
+server.tool(
+  "promote_app",
+  "Promote an app's staged version to live (after a staging deploy_app).",
+  { slug: z.string() },
+  async ({ slug }) => {
+    try { return ok(await api(`/v1/sites/${encodeURIComponent(slug)}/promote`, { method: "POST" })); }
+    catch (e) { return err(e); }
+  },
+);
+
+server.tool(
+  "rollback_app",
+  "Roll an app's live pointer back to an earlier version (omit n for the previous version).",
+  { slug: z.string(), n: z.number().optional() },
+  async ({ slug, n }) => {
+    try { return ok(await api(`/v1/sites/${encodeURIComponent(slug)}/rollback`, { method: "POST", body: JSON.stringify({ n }) })); }
+    catch (e) { return err(e); }
+  },
+);
+
+server.tool(
+  "list_app_versions",
+  "List an app's deploy versions, with which is live and which is staged.",
+  { slug: z.string() },
+  async ({ slug }) => {
+    try { return ok(await api(`/v1/sites/${encodeURIComponent(slug)}/versions`, { method: "GET" })); }
+    catch (e) { return err(e); }
   },
 );
 

@@ -98,7 +98,13 @@ bun run cli deploy ./my-app --slug my-app --visibility public --title "My App"
 
 Prints `https://my-app.jasonv.app`. Unlisted links carry a `?k=` token.
 
-**Redeploy is the same command.** Re-run `deploy` with the same `--slug` to update in place: same URL, same token. It replaces changed files and prunes ones you deleted. Leave `--visibility` off to keep the current setting. The loop is build, deploy, tweak, deploy.
+**Redeploy = a new immutable version.** Re-run `deploy` with the same `--slug`: same URL, same token, but each deploy is a saved version. Files you drop from the folder are just absent in the new version (no prune). Leave `--visibility` off to keep the current setting.
+
+- `artifact rollback <slug> [version]` — undo a bad deploy (live points back at an earlier version).
+- `artifact deploy <dir> --slug x --staging` → preview at `x--staging.jasonv.app` without touching live, then `artifact promote x`.
+- `artifact versions <slug>` — list versions (live/staging marked).
+
+The loop is build → deploy → tweak → deploy, with rollback as the safety net and `--staging` when you want to review before going live.
 
 ## 5. Verify before you hand it over
 
