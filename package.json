@@ -1,0 +1,10 @@
+{
+  "name": "artifact-studio-tools",
+  "type": "module",
+  "workspaces": ["cli", "mcp"],
+  "scripts": {
+    "cli": "bun run cli/src/index.ts",
+    "mcp": "bun run mcp/src/index.ts"
+  },
+  "engines": { "node": ">=20" }
+}

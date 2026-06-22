@@ -1,0 +1,15 @@
+{
+  "name": "@artifact/cli",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "bin": { "artifact": "src/index.ts" },
+  "scripts": {
+    "build": "tsc -b",
+    "start": "bun run src/index.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  }
+}
