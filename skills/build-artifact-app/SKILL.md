@@ -127,4 +127,11 @@ The loop is build → deploy → tweak → deploy, with rollback as the safety n
 
 Load the live URL in a browser, confirm it renders and the console is clean, and screenshot it. Don't claim it works unseen. The most common live failure is a wrong esm.sh path or a relative-path 404, both visible in the console.
 
+**Eyeball these — they're the gotchas above, made visible (a clean console won't catch them):**
+- Console + network clean (no failed module/asset loads).
+- Code/preformatted blocks render on **separate lines**, not mashed onto one (htm whitespace collapse).
+- All text is **readable** — no dark-on-dark, especially button/tab/card labels (the no-`color` button trap).
+- No literal `&lt;` / `&gt;` / `&amp;` showing as text anywhere (the htm entity trap).
+- Every interactive element (buttons, tabs, inputs) actually responds.
+
 **Caches lie when verifying a fix.** After a redeploy, a browser (and a headless/automation browser's persistent cache) can keep serving the *old* `app.js`/`styles.css` and make a correct fix look broken. Before concluding a fix didn't land, check the source of truth: `curl -s https://<slug>.jasonv.app/app.js | grep <your-change>`. If the server has it, it's just cache — hard-refresh (Cmd/Ctrl+Shift+R).
