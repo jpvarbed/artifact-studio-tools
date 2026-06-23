@@ -228,9 +228,9 @@ async function backend(args: string[]) {
   const out = await api(`/v1/sites/${encodeURIComponent(slug)}/backend`, { method: "POST" });
   if (has(args, "json")) console.log(JSON.stringify(out, null, 2));
   else {
-    process.stderr.write("Per-app data key (shown once). Embed it in your app and send as X-App-Key:\n");
+    process.stderr.write("Per-app data key (shown once). Embed it in your app and send as X-Data-Key:\n");
     console.log(out.dataKey);
-    process.stderr.write(`\nUse it: fetch("/api/kv/<collection>/<key>", { headers: { "X-App-Key": KEY } })\n`);
+    process.stderr.write(`\nUse it: fetch("/api/kv/<collection>/<key>", { headers: { "X-Data-Key": KEY } })\n`);
   }
 }
 

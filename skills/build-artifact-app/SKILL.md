@@ -81,7 +81,7 @@ bun run cli backend <slug>     # prints a per-app data key (shown once); embed i
 
 ```js
 await fetch("/api/kv/scores/top", {
-  method: "PUT", headers: { "X-App-Key": KEY }, body: JSON.stringify(value),
+  method: "PUT", headers: { "X-Data-Key": KEY }, body: JSON.stringify(value),
 });
 // GET → { value }; GET /api/kv/<collection> lists. No X-End-User = app-shared data.
 ```
@@ -92,7 +92,7 @@ other's data, and the same visitor gets theirs back on return:
 
 ```js
 const EU = localStorage.getItem("eu") ?? (() => { const v = crypto.randomUUID(); localStorage.setItem("eu", v); return v; })();
-const h = { "X-App-Key": KEY, "X-End-User": EU };
+const h = { "X-Data-Key": KEY, "X-End-User": EU };
 await fetch("/api/kv/notes/draft", { method: "PUT", headers: h, body: JSON.stringify(text) });
 const { value } = await (await fetch("/api/kv/notes/draft", { headers: h })).json();
 ```

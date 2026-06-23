@@ -136,12 +136,12 @@ server.tool(
 
 server.tool(
   "provision_backend",
-  "Give a deployed site a managed key-value backend. Returns a per-app data key to embed in the app; the app reads/writes at /api/kv/<collection>/<key> sending the key as the X-App-Key header. Shared storage (not per-end-user private).",
+  "Give a deployed site a managed key-value backend. Returns a per-app data key to embed in the app; the app reads/writes at /api/kv/<collection>/<key> sending the key as the X-Data-Key header. Shared storage (not per-end-user private).",
   { slug: z.string() },
   async ({ slug }) => {
     try {
       const out = await api(`/v1/sites/${encodeURIComponent(slug)}/backend`, { method: "POST" });
-      return ok({ dataKey: out.dataKey, usage: 'fetch("/api/kv/<collection>/<key>", { headers: { "X-App-Key": dataKey } })' });
+      return ok({ dataKey: out.dataKey, usage: 'fetch("/api/kv/<collection>/<key>", { headers: { "X-Data-Key": dataKey } })' });
     } catch (e) {
       return err(e);
     }

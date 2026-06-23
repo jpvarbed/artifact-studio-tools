@@ -70,7 +70,7 @@ function Kinds() {
   return html`
     <section class="rise" style=${{ animationDelay: "140ms" }}>
       <div class="kicker">What you can publish</div>
-      <h2>Five kinds of artifact</h2>
+      <h2>Five kinds of app</h2>
       <p class="sub">From a one-off graphic to a real app with a backend. Pick a kind to see what it's for.</p>
       <div class="card">
         <div class="tabs">
@@ -110,17 +110,35 @@ function Visibility() {
     </section>`;
 }
 
+function Versions() {
+  return html`
+    <section class="rise" style=${{ animationDelay: "160ms" }}>
+      <div class="kicker">Safe to change</div>
+      <h2>Versions, staging & rollback</h2>
+      <p class="sub">Every deploy is an immutable version at the same URL. Preview before you ship, and undo in one command.</p>
+      <div class="card">
+        <pre><span class="c"># redeploy = a new version (same URL); roll back a bad one</span>
+<span class="k">artifact</span> deploy ./my-app --slug my-app
+<span class="k">artifact</span> rollback my-app
+<span class="c"># preview on a staging origin, then promote to live</span>
+<span class="k">artifact</span> deploy ./my-app --slug my-app --staging   <span class="c"># → my-app--staging.jasonv.app</span>
+<span class="k">artifact</span> promote my-app</pre>
+      </div>
+    </section>`;
+}
+
 function Backend() {
   return html`
     <section class="rise" style=${{ animationDelay: "160ms" }}>
       <div class="kicker">Optional</div>
       <h2>Give an app a backend</h2>
-      <p class="sub">Need to store data? Provision a managed key-value store for an app — one call, no server to run.</p>
+      <p class="sub">Need to store data? Provision a managed key-value store for an app — one call, no server to run. Shared by default; scope it per visitor for private data.</p>
       <div class="card">
         <pre><span class="c"># publish a multi-file React app, then add a KV store</span>
 <span class="k">artifact</span> deploy ./my-app --slug my-app --visibility public
 <span class="k">artifact</span> backend my-app
-<span class="c"># the app reads + writes at</span>  <span class="s">${"/api/kv/<collection>/<key>"}</span></pre>
+<span class="c"># shared data</span>      <span class="s">${"PUT /api/kv/<collection>/<key>"}</span>  <span class="c">+ X-Data-Key</span>
+<span class="c"># private per visitor</span>  <span class="c">add header</span> <span class="s">${"X-End-User: <per-visitor-secret>"}</span></pre>
       </div>
     </section>`;
 }
@@ -141,6 +159,7 @@ function App() {
       <${Flow} />
       <${Kinds} />
       <${Visibility} />
+      <${Versions} />
       <${Backend} />
       <${Footer} />
     </div>`;
