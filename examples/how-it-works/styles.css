@@ -150,7 +150,7 @@ pre .s { color: var(--green); }
 .vis-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 20px; }
 @media (min-width: 680px) { .vis-grid { grid-template-columns: repeat(3, 1fr); } }
 .vis {
-  text-align: left; cursor: pointer; font: inherit;
+  text-align: left; cursor: pointer; font: inherit; color: var(--ink);
   background: var(--bg2); border: 1px solid var(--border); border-radius: 14px;
   padding: 15px; transition: scale 0.12s, border-color 0.18s, background 0.18s;
 }

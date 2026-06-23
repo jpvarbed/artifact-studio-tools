@@ -111,35 +111,39 @@ function Visibility() {
 }
 
 function Versions() {
+  const code = [
+    "# redeploy = a new version (same URL)",
+    "artifact deploy ./my-app --slug my-app",
+    "artifact rollback my-app          # undo a bad deploy",
+    "",
+    "# preview on staging, then promote to live",
+    "artifact deploy ./my-app --slug my-app --staging",
+    "artifact promote my-app",
+  ].join("\n");
   return html`
     <section class="rise" style=${{ animationDelay: "160ms" }}>
       <div class="kicker">Safe to change</div>
       <h2>Versions, staging & rollback</h2>
       <p class="sub">Every deploy is an immutable version at the same URL. Preview before you ship, and undo in one command.</p>
-      <div class="card">
-        <pre><span class="c"># redeploy = a new version (same URL); roll back a bad one</span>
-<span class="k">artifact</span> deploy ./my-app --slug my-app
-<span class="k">artifact</span> rollback my-app
-<span class="c"># preview on a staging origin, then promote to live</span>
-<span class="k">artifact</span> deploy ./my-app --slug my-app --staging   <span class="c"># → my-app--staging.jasonv.app</span>
-<span class="k">artifact</span> promote my-app</pre>
-      </div>
+      <div class="card"><pre>${code}</pre></div>
     </section>`;
 }
 
 function Backend() {
+  const code = [
+    "# publish an app, then add a KV store",
+    "artifact deploy ./my-app --slug my-app --visibility public",
+    "artifact backend my-app",
+    "",
+    "# shared data:        PUT /api/kv/<collection>/<key>  + X-Data-Key",
+    "# private per visitor: also send  X-End-User: <secret>",
+  ].join("\n");
   return html`
     <section class="rise" style=${{ animationDelay: "160ms" }}>
       <div class="kicker">Optional</div>
       <h2>Give an app a backend</h2>
       <p class="sub">Need to store data? Provision a managed key-value store for an app — one call, no server to run. Shared by default; scope it per visitor for private data.</p>
-      <div class="card">
-        <pre><span class="c"># publish a multi-file React app, then add a KV store</span>
-<span class="k">artifact</span> deploy ./my-app --slug my-app --visibility public
-<span class="k">artifact</span> backend my-app
-<span class="c"># shared data</span>      <span class="s">${"PUT /api/kv/<collection>/<key>"}</span>  <span class="c">+ X-Data-Key</span>
-<span class="c"># private per visitor</span>  <span class="c">add header</span> <span class="s">${"X-End-User: <per-visitor-secret>"}</span></pre>
-      </div>
+      <div class="card"><pre>${code}</pre></div>
     </section>`;
 }
 
