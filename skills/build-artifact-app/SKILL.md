@@ -66,6 +66,8 @@ createRoot(document.getElementById("root")).render(html`<${App} />`);
 | Gotcha | Fix |
 | --- | --- |
 | `&lt;slug&gt;` shows up literally in output | HTML entities in `htm` template literals render as text. Use a JS expression: `${"<slug>"}`. |
+| Multi-line `<pre>`/code mashes onto one line | `htm` collapses whitespace (incl. newlines) *between* elements, so one `<span>` per line gets concatenated. Render the block as one string with real `\n`: `` html`<pre>${code}</pre>` `` where `code = ["line1","line2"].join("\n")`. (String children keep their newlines; only inter-element whitespace is dropped.) |
+| Styled `<button>`/`<input>` text is dark/invisible | Buttons & inputs do **not** inherit `color` — they default to the browser's (dark) UA color. Set `color: var(--ink)` (or your theme color) explicitly on every interactive element. |
 | Bare `<script>` JSX | No build step. Use `htm`, or precompiled output. |
 | Asset path confusion | Each app owns its origin (`<slug>.jasonv.app`), so `./foo.js`, `/foo.js`, and CDN URLs all work. Prefer relative. |
 | `import "react"` fails | Pin it in the importmap (`react@19.0.0`), don't rely on bare specifiers resolving. |
@@ -124,3 +126,5 @@ The loop is build → deploy → tweak → deploy, with rollback as the safety n
 ## 5. Verify before you hand it over
 
 Load the live URL in a browser, confirm it renders and the console is clean, and screenshot it. Don't claim it works unseen. The most common live failure is a wrong esm.sh path or a relative-path 404, both visible in the console.
+
+**Caches lie when verifying a fix.** After a redeploy, a browser (and a headless/automation browser's persistent cache) can keep serving the *old* `app.js`/`styles.css` and make a correct fix look broken. Before concluding a fix didn't land, check the source of truth: `curl -s https://<slug>.jasonv.app/app.js | grep <your-change>`. If the server has it, it's just cache — hard-refresh (Cmd/Ctrl+Shift+R).
