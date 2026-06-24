@@ -62,8 +62,9 @@ function has(args: string[], name: string): boolean {
 }
 /** --llms <path>: read an llms.txt manifest to attach to the app (served at /llms.txt). */
 function llmsFlag(args: string[]): string | undefined {
+  if (!has(args, "llms")) return undefined;
   const p = flag(args, "llms");
-  if (!p) return undefined;
+  if (!p) fail("--llms requires a file path, e.g. --llms ./llms.txt");
   try {
     return readFileSync(p, "utf8");
   } catch {
@@ -179,7 +180,6 @@ async function deploy(args: string[]) {
       visibility: flag(args, "visibility"), // omit → server defaults (new) or preserves (update)
       commentsEnabled: has(args, "comments") ? true : undefined,
       csp: flag(args, "csp"),
-      llmsTxt: llmsFlag(args), // or just drop an llms.txt in the folder — it's served at /llms.txt
     }),
   });
 
@@ -195,6 +195,21 @@ async function deploy(args: string[]) {
       body: JSON.stringify({ path, storageId, size: bytes.length, contentType: ct }),
     });
     process.stderr.write(`  + ${path}\n`);
+  }
+
+  // --llms uploads the manifest as a versioned llms.txt FILE (so it's stage-aware + finalize-gated,
+  // unlike an eager app field). It overrides any llms.txt already in the folder.
+  const llms = llmsFlag(args);
+  if (llms !== undefined) {
+    const ct = "text/plain; charset=utf-8";
+    const { url } = await api("/v1/uploads", { method: "POST" });
+    const up = await fetch(url, { method: "POST", headers: { "Content-Type": ct }, body: Buffer.from(llms) });
+    const { storageId } = await up.json();
+    await api(`/v1/sites/${encodeURIComponent(site.slug)}/files`, {
+      method: "POST",
+      body: JSON.stringify({ path: "llms.txt", storageId, size: Buffer.byteLength(llms), contentType: ct }),
+    });
+    process.stderr.write(`  + llms.txt (from --llms)\n`);
   }
 
   // Atomic flip: point live (or staging) at the just-uploaded version.
