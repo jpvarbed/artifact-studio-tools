@@ -68,6 +68,7 @@ createRoot(document.getElementById("root")).render(html`<${App} />`);
 | `&lt;slug&gt;` shows up literally in output | HTML entities in `htm` template literals render as text. Use a JS expression: `${"<slug>"}`. |
 | Multi-line `<pre>`/code mashes onto one line | `htm` collapses whitespace (incl. newlines) *between* elements, so one `<span>` per line gets concatenated. Render the block as one string with real `\n`: `` html`<pre>${code}</pre>` `` where `code = ["line1","line2"].join("\n")`. (String children keep their newlines; only inter-element whitespace is dropped.) |
 | Styled `<button>`/`<input>` text is dark/invisible | Buttons & inputs do **not** inherit `color` — they default to the browser's (dark) UA color. Set `color: var(--ink)` (or your theme color) explicitly on every interactive element. |
+| App crashes white-screen with **React error #62** | An inline `style="..."` *string*. React wants `style` as an **object**, and htm passes the attribute through verbatim. Use `style=${{ marginTop: "10px" }}`, or just a CSS class. |
 | Bare `<script>` JSX | No build step. Use `htm`, or precompiled output. |
 | Asset path confusion | Each app owns its origin (`<slug>.jasonv.app`), so `./foo.js`, `/foo.js`, and CDN URLs all work. Prefer relative. |
 | `import "react"` fails | Pin it in the importmap (`react@19.0.0`), don't rely on bare specifiers resolving. |
