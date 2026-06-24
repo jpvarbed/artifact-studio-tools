@@ -29,11 +29,14 @@ key belong to their account and appear in the studio **Mine** tab. Run the CLI a
 
 ```bash
 bun run cli share <file> --slug <slug> [--kind svg|html|markdown] [--title "..."] \
-  [--visibility private|unlisted|public] [--comments]
+  [--visibility private|unlisted|public] [--comments] [--llms ./llms.txt]
 ```
 
 `--kind` is inferred from the extension. `--slug` is the URL. Default visibility `unlisted` (link
 includes a `?k=` token). Prints the URL — hand it back.
+
+`--llms <file>` attaches an agent-readable manifest served at `<slug>.jasonv.app/llms.txt` (the
+llms.txt convention) so other agents can understand the app. Recommended for anything non-trivial.
 
 **To update an existing app, re-run with the same `--slug`** — it updates in place (same URL + token),
 not a new app. A slug you don't own or a retired one errors `taken` (pick another). Options you omit

@@ -43,6 +43,7 @@ server.tool(
     title: z.string().optional(),
     visibility: z.enum(["private", "unlisted", "public"]).optional().describe("Default unlisted on first publish; preserved on update."),
     commentsEnabled: z.boolean().optional(),
+    llmsTxt: z.string().optional().describe("Agent-facing manifest (markdown) served at <slug>.<domain>/llms.txt — describe what the app does, its routes, and any data API so other agents can use it. Recommended for every app."),
   },
   async (args) => {
     try {
@@ -75,16 +76,17 @@ server.tool(
     visibility: z.enum(["private", "unlisted", "public"]).optional(),
     commentsEnabled: z.boolean().optional(),
     csp: z.string().optional().describe("Optional CSP to lock the app down; overrides the permissive default."),
+    llmsTxt: z.string().optional().describe("Agent-facing manifest served at /llms.txt. Or just include an llms.txt FILE in `files` (it overrides this). Recommended for every app."),
     staging: z.boolean().optional().describe("Deploy to the staging origin instead of live."),
   },
-  async ({ slug, files, title, visibility, commentsEnabled, csp, staging }) => {
+  async ({ slug, files, title, visibility, commentsEnabled, csp, llmsTxt, staging }) => {
     try {
       if (!files.some((f) => f.path.replace(/^\//, "") === "index.html"))
         return err("files must include an index.html at the root");
       // New draft version — not live until finalize() below (zero-downtime redeploys, ADR-0009).
       const site = await api("/v1/sites", {
         method: "POST",
-        body: JSON.stringify({ slug, title, visibility, commentsEnabled, csp }),
+        body: JSON.stringify({ slug, title, visibility, commentsEnabled, csp, llmsTxt }),
       });
       for (const f of files) {
         const path = f.path.replace(/^\//, "") || "index.html";

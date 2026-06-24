@@ -105,7 +105,36 @@ Drop `X-End-User` for shared state (leaderboards, global counters); include it f
 The data key only exists after the app does, so it's a three-step bootstrap: `deploy` once, run
 `backend <slug>` to get the key, embed it, then `deploy` again. After that, normal redeploys.
 
-## 4. Deploy
+## 4. Add an llms.txt (do this by default)
+
+Every app should ship an `llms.txt` — a short markdown manifest served at `<slug>.jasonv.app/llms.txt` so another **agent** can understand and drive your app without reading the source. It's the agent-native README. Write one for every app unless it's truly throwaway.
+
+For a multi-file app, **just put `llms.txt` in the folder** — it deploys with everything else and is served at `/llms.txt` automatically (a folder file always wins). For a single-file `share`, pass `--llms ./llms.txt`. (Under the hood it's also a first-class `llmsTxt` field on the API/MCP, ≤64 KB, and it honors the app's visibility — an unlisted app's llms.txt needs the `?k=` token.)
+
+Template:
+
+```markdown
+# <App name>
+
+> One-sentence description of what this app does.
+
+Two or three sentences: what a visitor or agent can do here, and how it behaves.
+
+## Routes
+- `/` — the main view
+- `/<other>` — (list any additional pages)
+
+## Data API
+- KV collection `<name>`: key = `<shape>`, value = `<shape>`. Per-visitor (X-End-User) or shared.
+- (omit this whole section if the app has no backend)
+
+## Notes for agents
+- How to drive it programmatically: query params, expected inputs, anything non-obvious.
+```
+
+Keep it current: update `llms.txt` whenever routes or the data model change, and redeploy.
+
+## 5. Deploy
 
 Credentials: set `ARTIFACT_API_KEY` (mint one at studio.artifacts.jasonv.dev → Settings; the `share-artifact` skill has the details). The API base defaults to the hosted studio.
 
@@ -123,7 +152,7 @@ Prints `https://my-app.jasonv.app`. Unlisted links carry a `?k=` token.
 
 The loop is build → deploy → tweak → deploy, with rollback as the safety net and `--staging` when you want to review before going live.
 
-## 5. Verify before you hand it over
+## 6. Verify before you hand it over
 
 Load the live URL in a browser, confirm it renders and the console is clean, and screenshot it. Don't claim it works unseen. The most common live failure is a wrong esm.sh path or a relative-path 404, both visible in the console.
 
@@ -133,5 +162,6 @@ Load the live URL in a browser, confirm it renders and the console is clean, and
 - All text is **readable** — no dark-on-dark, especially button/tab/card labels (the no-`color` button trap).
 - No literal `&lt;` / `&gt;` / `&amp;` showing as text anywhere (the htm entity trap).
 - Every interactive element (buttons, tabs, inputs) actually responds.
+- `curl -s https://<slug>.jasonv.app/llms.txt` returns your manifest (not "Not found") — the agent-readable description shipped.
 
 **Caches lie when verifying a fix.** After a redeploy, a browser (and a headless/automation browser's persistent cache) can keep serving the *old* `app.js`/`styles.css` and make a correct fix look broken. Before concluding a fix didn't land, check the source of truth: `curl -s https://<slug>.jasonv.app/app.js | grep <your-change>`. If the server has it, it's just cache — hard-refresh (Cmd/Ctrl+Shift+R).

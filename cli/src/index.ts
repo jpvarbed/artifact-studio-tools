@@ -60,6 +60,16 @@ function flag(args: string[], name: string): string | undefined {
 function has(args: string[], name: string): boolean {
   return args.includes(`--${name}`);
 }
+/** --llms <path>: read an llms.txt manifest to attach to the app (served at /llms.txt). */
+function llmsFlag(args: string[]): string | undefined {
+  const p = flag(args, "llms");
+  if (!p) return undefined;
+  try {
+    return readFileSync(p, "utf8");
+  } catch {
+    fail(`cannot read --llms file: ${p}`);
+  }
+}
 
 function env(name: string): string {
   const v = process.env[name];
@@ -134,6 +144,7 @@ async function share(args: string[]) {
     visibility: flag(args, "visibility"), // omit → server defaults (new) or preserves (update)
     commentsEnabled: has(args, "comments") ? true : undefined,
     csp: flag(args, "csp"),
+    llmsTxt: llmsFlag(args),
   };
   const out = await api("/v1/apps", { method: "POST", body: JSON.stringify(body) });
   process.stderr.write(`${out.updated ? "updated" : "created"} ${out.slug}\n`);
@@ -168,6 +179,7 @@ async function deploy(args: string[]) {
       visibility: flag(args, "visibility"), // omit → server defaults (new) or preserves (update)
       commentsEnabled: has(args, "comments") ? true : undefined,
       csp: flag(args, "csp"),
+      llmsTxt: llmsFlag(args), // or just drop an llms.txt in the folder — it's served at /llms.txt
     }),
   });
 
