@@ -1,0 +1,18 @@
+# Guestbook
+
+> A live demo of Artifact Studio: a shared guestbook plus a per-visitor private note, both persisted in the managed KV backend with no server code.
+
+This is a multi-file React app (esm.sh, no build step) hosted on Artifact Studio. It exists to show two persistence modes side by side.
+
+## Routes
+- `/` — the guestbook UI
+
+## Data API (managed KV, same origin)
+- `PUT/GET /api/kv/entries/<id>` — shared entries `{ name, message, at }`. No `X-End-User` header → visible to everyone.
+- `GET /api/kv/entries` — list all shared entries.
+- `PUT/GET /api/kv/notes/me` — a private note `{ text }`. Sent with an `X-End-User` header (a per-visitor secret in localStorage) → scoped to that visitor only.
+- All calls send `X-Data-Key` (the per-app data key).
+
+## Notes for agents
+- Shared vs private is purely whether the `X-End-User` header is present.
+- No auth/login: the end-user id is a per-device capability, not an account.

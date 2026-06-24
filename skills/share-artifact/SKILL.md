@@ -58,6 +58,10 @@ Then deploy the folder (must contain `index.html`; use relative or CDN-absolute 
 bun run cli deploy <dir> --slug <slug> [--title "..."] [--visibility ...] [--comments]
 ```
 
+Prefer a real build step? `deploy` just uploads a static folder, so build with Vite/etc. and point it
+at the output: `bun run cli deploy ./dist --slug <slug>`. See the `build-artifact-app` skill (no-build vs
+build-step) and `examples/guestbook` for a Vite + React + TypeScript app.
+
 Re-running `deploy` with the same `--slug` deploys a new immutable version (same URL + token); files
 you drop from the folder are simply absent in the new version. Undo with `artifact rollback <slug>`;
 preview with `deploy --staging` then `artifact promote <slug>`. `artifact versions <slug>` lists them.

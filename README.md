@@ -80,7 +80,7 @@ ln -sfn "$PWD/skills/share-artifact" ~/.claude/skills/share-artifact
 cli/       the `artifact` CLI (share | deploy | backend | list/get/delete)
 mcp/       MCP server (publish_artifact, deploy_app, provision_backend, …)
 skills/    the share-artifact Claude skill
-examples/  worked examples you can copy (how-it-works is the live tour)
+examples/  copyable examples — how-it-works (no-build htm tour), guestbook (Vite + React + TS build step)
 ```
 
 The studio web app and Convex backend these talk to live in a separate service repo.

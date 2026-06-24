@@ -17,7 +17,14 @@ Don't jump to code. Spend a moment on what you're building and how it should fee
 - Make it feel built, not templated. A clear visual direction plus the small details that read as care: concentric border radii, `tabular-nums` on changing numbers, a subtle scale-on-press, staggered enter animations. (If you have `frontend-design` or `make-interfaces-feel-better` skills, use them.)
 - Decide: does it need to store data across visits? If yes, you need the KV backend (step 3).
 
-## 2. Build — multi-file React from esm.sh (no bundler)
+## 2. Build — no-build *or* a real build step
+
+**Two ways, same deploy.** The host only serves static files, so pick whichever fits:
+
+- **No-build (htm + esm.sh)** — a folder of `index.html` + JS modules that import deps from a CDN at runtime. Zero tooling, instant. Great for quick/simple apps. Mind the htm gotchas below.
+- **Real build step (Vite + React + TypeScript)** — author in `.tsx` with real JSX, types, and HMR; `vite build` emits a `dist/` you deploy. **No htm gotchas.** Reach for this once the app is non-trivial or you want types. Jump to "Real build step" below, or copy `examples/guestbook`.
+
+### No-build: multi-file React from esm.sh
 
 A folder with `index.html` at the root, plus JS modules. Pin esm.sh versions. Each app is served at the root of its own origin (`<slug>.jasonv.app`), so relative (`./app.js`), root-absolute (`/app.js`), and CDN (`https://…`) paths all resolve — relative is safest.
 
@@ -73,6 +80,22 @@ createRoot(document.getElementById("root")).render(html`<${App} />`);
 | Asset path confusion | Each app owns its origin (`<slug>.jasonv.app`), so `./foo.js`, `/foo.js`, and CDN URLs all work. Prefer relative. |
 | `import "react"` fails | Pin it in the importmap (`react@19.0.0`), don't rely on bare specifiers resolving. |
 | No `index.html` at root | `/` 404s. The root document must be `index.html`. |
+
+### Real build step: Vite + React + TypeScript
+
+When you want JSX/`.tsx`, types, and HMR, use a normal Vite app and **deploy its build output** — the htm gotchas above don't apply (real JSX handles `style` objects, whitespace, and entities correctly).
+
+```bash
+bun create vite@latest my-app -- --template react-ts   # or copy examples/guestbook
+cd my-app && bun install
+bun run build                 # → dist/
+artifact deploy ./dist --slug my-app --visibility public
+```
+
+- Set `base: "./"` in `vite.config.ts` so the built `index.html` references relative `./assets/...` (resolves on the app's own origin).
+- Put `llms.txt` and any other root files in `public/` — Vite copies them to the `dist` root.
+- The loop becomes: edit `src` → `bun run build` → `artifact deploy ./dist`. Everything else — versions, `--staging`, rollback, the KV backend below — is identical; you're just deploying a folder.
+- Working example with both KV modes: **`examples/guestbook`** (real `.tsx`).
 
 ## 3. Optional KV backend
 
@@ -141,6 +164,7 @@ Credentials: set `ARTIFACT_API_KEY` (mint one at studio.artifacts.jasonv.dev →
 
 ```bash
 bun run cli deploy ./my-app --slug my-app --visibility public --title "My App"
+# build-step app? deploy the output folder instead:  bun run cli deploy ./dist --slug my-app
 ```
 
 Prints `https://my-app.jasonv.app`. Unlisted links carry a `?k=` token.
