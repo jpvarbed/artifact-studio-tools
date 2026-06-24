@@ -158,6 +158,8 @@ async function deploy(args: string[]) {
   const staging = has(args, "staging");
   // Each deploy is a fresh immutable version (ADR-0009), so removed files just aren't re-uploaded —
   // no prune step. --staging deploys to the staging origin, leaving live untouched.
+  // Start a new draft version. It does NOT go live until finalize() below, so a redeploy keeps the
+  // current version serving with zero downtime (ADR-0009). --staging is decided at finalize.
   const site = await api("/v1/sites", {
     method: "POST",
     body: JSON.stringify({
@@ -166,7 +168,6 @@ async function deploy(args: string[]) {
       visibility: flag(args, "visibility"), // omit → server defaults (new) or preserves (update)
       commentsEnabled: has(args, "comments") ? true : undefined,
       csp: flag(args, "csp"),
-      staging: staging ? true : undefined,
     }),
   });
 
@@ -184,8 +185,14 @@ async function deploy(args: string[]) {
     process.stderr.write(`  + ${path}\n`);
   }
 
+  // Atomic flip: point live (or staging) at the just-uploaded version.
+  const fin = await api(`/v1/sites/${encodeURIComponent(site.slug)}/finalize`, {
+    method: "POST",
+    body: JSON.stringify({ staging: staging ? true : undefined }),
+  });
+
   const verb = site.updated ? "updated" : "created";
-  process.stderr.write(`${verb} ${site.slug}  (v${site.version}${site.target === "staging" ? ", staging" : ""})\n`);
+  process.stderr.write(`${verb} ${site.slug}  (v${fin.version}${fin.target === "staging" ? ", staging" : ""})\n`);
   // staging deploys preview at <slug>--staging.<domain>; live deploys at the canonical URL.
   const liveUrl = site.url + (site.visibility === "unlisted" ? `?k=${site.token}` : "");
   const stageUrl = site.url.replace(/^https:\/\/([^.]+)\./, "https://$1--staging.");

@@ -81,9 +81,10 @@ server.tool(
     try {
       if (!files.some((f) => f.path.replace(/^\//, "") === "index.html"))
         return err("files must include an index.html at the root");
+      // New draft version — not live until finalize() below (zero-downtime redeploys, ADR-0009).
       const site = await api("/v1/sites", {
         method: "POST",
-        body: JSON.stringify({ slug, title, visibility, commentsEnabled, csp, staging }),
+        body: JSON.stringify({ slug, title, visibility, commentsEnabled, csp }),
       });
       for (const f of files) {
         const path = f.path.replace(/^\//, "") || "index.html";
@@ -96,8 +97,9 @@ server.tool(
           body: JSON.stringify({ path, storageId, size: f.content.length, contentType: ct }),
         });
       }
+      const fin = await api(`/v1/sites/${encodeURIComponent(site.slug)}/finalize`, { method: "POST", body: JSON.stringify({ staging }) });
       const url = site.url + (site.visibility === "unlisted" ? `?k=${site.token}` : "");
-      return ok({ slug: site.slug, url, files: files.length, updated: site.updated, version: site.version, target: site.target });
+      return ok({ slug: site.slug, url, files: files.length, updated: site.updated, version: fin.version, target: fin.target });
     } catch (e) {
       return err(e);
     }
