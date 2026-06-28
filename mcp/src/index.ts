@@ -10,8 +10,9 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 
-// The hosted studio API. Override ARTIFACT_API_BASE only to point at your own deployment.
-const DEFAULT_API_BASE = "https://amiable-crocodile-777.convex.site";
+// The hosted studio API on its stable, branded domain (JAS-18). Override ARTIFACT_API_BASE only to
+// point at your own deployment. The raw Convex host still works as a fallback if set explicitly.
+const DEFAULT_API_BASE = "https://api.artifacts.jasonv.dev";
 const API_BASE = (process.env.ARTIFACT_API_BASE || DEFAULT_API_BASE).replace(/\/$/, "");
 const API_KEY = process.env.ARTIFACT_API_KEY ?? "";
 

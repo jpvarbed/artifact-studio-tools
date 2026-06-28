@@ -78,8 +78,10 @@ function env(name: string): string {
   return v;
 }
 
-// The hosted studio API. Override ARTIFACT_API_BASE only to point at your own deployment.
-const DEFAULT_API_BASE = "https://amiable-crocodile-777.convex.site";
+// The hosted studio API on its stable, branded domain (JAS-18). Override ARTIFACT_API_BASE only to
+// point at your own deployment. The raw Convex host (amiable-crocodile-777.convex.site) still works
+// as a fallback if you ever need to set it explicitly.
+const DEFAULT_API_BASE = "https://api.artifacts.jasonv.dev";
 
 const MIME: Record<string, string> = {
   html: "text/html; charset=utf-8", htm: "text/html; charset=utf-8",
