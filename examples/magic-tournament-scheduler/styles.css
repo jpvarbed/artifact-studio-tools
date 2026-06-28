@@ -212,11 +212,91 @@ button.danger:hover {
 }
 .toolbar .right {
   display: flex;
+  align-items: center;
   gap: 8px;
 }
 .progress {
   color: var(--muted);
   font-size: 13px;
+}
+
+/* Round stepper */
+.rnav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.rnav button {
+  padding: 6px 13px;
+  font-size: 16px;
+  line-height: 1;
+  background: transparent;
+}
+.rnav-label {
+  font-size: 15px;
+  letter-spacing: 0.01em;
+}
+.rnav-label b {
+  color: var(--accent);
+}
+.round-dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 14px 0 4px;
+}
+.rdot {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  background: #0b0f14;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.rdot.done {
+  border-color: #2f5e35;
+  color: var(--win);
+}
+.rdot.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 700;
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.round-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 14px 2px 4px;
+}
+.next-round {
+  padding: 8px 16px;
+}
+.next-round.ghosted {
+  background: var(--panel-2);
+  border-color: var(--line);
+  color: var(--muted);
+  font-weight: 500;
+}
+.match.bye {
+  border-style: dashed;
+  opacity: 0.85;
+}
+.live-dot {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--win);
+  border: 1px solid #2f5e35;
+  border-radius: 999px;
+  padding: 2px 7px;
+  vertical-align: middle;
+  margin-left: 8px;
 }
 
 /* Rounds */

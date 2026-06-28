@@ -30,7 +30,7 @@ function App() {
   const [players, setPlayers] = useState([]);
   const [rounds, setRounds] = useState([]);
   const [results, setResults] = useState({}); // "ri:mi" -> result
-  const [tab, setTab] = useState("rounds");
+  const [currentRound, setCurrentRound] = useState(0); // which round you're entering
 
   const gamesToWin = Math.ceil(bestOf / 2); // Bo1→1, Bo3→2, Bo5→3
 
@@ -58,7 +58,7 @@ function App() {
     setPlayers(ps);
     setRounds(buildSchedule(ps.map((p) => p.id)));
     setResults({});
-    setTab("rounds");
+    setCurrentRound(0);
     setPhase("running");
   }
 
@@ -67,6 +67,7 @@ function App() {
     setPlayers([]);
     setRounds([]);
     setResults({});
+    setCurrentRound(0);
   }
 
   const nameById = useMemo(() => {
@@ -135,14 +136,14 @@ function App() {
           onGenerate=${generate}
         />`
       : html`<${Running}
-          tab=${tab}
-          setTab=${setTab}
           rounds=${rounds}
           results=${results}
           nameById=${nameById}
           standings=${standings}
           totalMatches=${totalMatches}
           playedMatches=${playedMatches}
+          currentRound=${currentRound}
+          setCurrentRound=${setCurrentRound}
           bestOf=${bestOf}
           setBestOf=${setBestOf}
           gamesToWin=${gamesToWin}
@@ -228,15 +229,27 @@ function Setup({ raw, setRaw, parsed, dupes, bestOf, setBestOf, onGenerate }) {
   `;
 }
 
+// How many real (non-bye) matches a round has, and how many have a result.
+function roundProgress(matches, results, ri) {
+  let real = 0;
+  let done = 0;
+  matches.forEach((m, mi) => {
+    if (isBye(m)) return;
+    real += 1;
+    if (results[`${ri}:${mi}`]) done += 1;
+  });
+  return { real, done, complete: real > 0 ? done === real : true };
+}
+
 function Running({
-  tab,
-  setTab,
   rounds,
   results,
   nameById,
   standings,
   totalMatches,
   playedMatches,
+  currentRound,
+  setCurrentRound,
   bestOf,
   setBestOf,
   gamesToWin,
@@ -244,80 +257,109 @@ function Running({
   onClearResult,
   onReset,
 }) {
+  const nRounds = rounds.length;
+  const ri = Math.min(Math.max(currentRound, 0), Math.max(nRounds - 1, 0));
+  const matches = rounds[ri] || [];
+  const { real, done, complete } = roundProgress(matches, results, ri);
+
   return html`
     <${React.Fragment}>
     <div class="toolbar">
-      <div class="tabs">
+      <div class="rnav">
         <button
-          class=${tab === "rounds" ? "active" : ""}
-          onClick=${() => setTab("rounds")}
+          class="ghost"
+          disabled=${ri === 0}
+          onClick=${() => setCurrentRound(ri - 1)}
+          aria-label="Previous round"
         >
-          Rounds
+          ‹
         </button>
+        <span class="rnav-label">Round <b>${ri + 1}</b> <span class="muted">/ ${nRounds}</span></span>
         <button
-          class=${tab === "standings" ? "active" : ""}
-          onClick=${() => setTab("standings")}
+          class="ghost"
+          disabled=${ri >= nRounds - 1}
+          onClick=${() => setCurrentRound(ri + 1)}
+          aria-label="Next round"
         >
-          Standings
+          ›
         </button>
       </div>
       <div class="right">
         <${FormatPicker} bestOf=${bestOf} setBestOf=${setBestOf} />
-        <span class="progress tabular"
-          >${playedMatches}/${totalMatches} played</span
-        >
         <button class="ghost danger" onClick=${onReset}>New tournament</button>
       </div>
     </div>
 
-    ${tab === "rounds"
-      ? html`<${Rounds}
-          rounds=${rounds}
-          results=${results}
-          nameById=${nameById}
-          gamesToWin=${gamesToWin}
-          onSetResult=${onSetResult}
-          onClearResult=${onClearResult}
-        />`
-      : html`<${Standings} rows=${standings} />`}
+    <div class="round-dots">
+      ${rounds.map((rm, i) => {
+        const p = roundProgress(rm, results, i);
+        return html`<button
+          key=${i}
+          class=${"rdot" + (i === ri ? " active" : "") + (p.complete ? " done" : "")}
+          onClick=${() => setCurrentRound(i)}
+          title=${`Round ${i + 1} — ${p.done}/${p.real} entered`}
+        >
+          ${i + 1}
+        </button>`;
+      })}
+    </div>
+
+    <${RoundPanel}
+      ri=${ri}
+      matches=${matches}
+      results=${results}
+      nameById=${nameById}
+      gamesToWin=${gamesToWin}
+      onSetResult=${onSetResult}
+      onClearResult=${onClearResult}
+    />
+
+    <div class="round-foot">
+      <span class="progress tabular"
+        >${done}/${real} this round · ${playedMatches}/${totalMatches} overall</span
+      >
+      ${ri < nRounds - 1 &&
+      html`<button
+        class=${"primary next-round" + (complete ? "" : " ghosted")}
+        onClick=${() => setCurrentRound(ri + 1)}
+      >
+        ${complete ? `Round ${ri + 2} →` : "Skip to next round →"}
+      </button>`}
+    </div>
+
+    <${Standings} rows=${standings} live=${true} />
     <//>
   `;
 }
 
-function Rounds({ rounds, results, nameById, gamesToWin, onSetResult, onClearResult }) {
-  return rounds.map(
-    (matches, ri) => html`
-      <div class="round" key=${ri}>
-        <div class="round-title">
-          <span>Round ${ri + 1}</span>
-          <span class="bar"></span>
-        </div>
-        ${matches.map((m, mi) =>
-          isBye(m)
-            ? html`<div class="match done" key=${mi}>
-                <div class="side">
-                  <span class="pname winner">${nameById.get(m.a)}</span>
-                </div>
-                <span class="vs">—</span>
-                <div class="side right">
-                  <span class="bye-tag">BYE (auto-win)</span>
-                </div>
-              </div>`
-            : html`<${MatchCard}
-                key=${mi}
-                ri=${ri}
-                mi=${mi}
-                m=${m}
-                res=${results[`${ri}:${mi}`]}
-                nameById=${nameById}
-                gamesToWin=${gamesToWin}
-                onSetResult=${onSetResult}
-                onClearResult=${onClearResult}
-              />`
-        )}
-      </div>
-    `
-  );
+function RoundPanel({ ri, matches, results, nameById, gamesToWin, onSetResult, onClearResult }) {
+  return html`
+    <div class="round">
+      ${matches.map((m, mi) =>
+        isBye(m)
+          ? html`<div class="match bye" key=${mi}>
+              <div class="side">
+                <span class="pname">${nameById.get(m.a)}</span>
+              </div>
+              <span class="vs">—</span>
+              <div class="side right">
+                <span class="bye-tag">BYE · sits out</span>
+              </div>
+            </div>`
+          : html`<${MatchCard}
+              key=${mi}
+              ri=${ri}
+              mi=${mi}
+              m=${m}
+              res=${results[`${ri}:${mi}`]}
+              nameById=${nameById}
+              gamesToWin=${gamesToWin}
+              onSetResult=${onSetResult}
+              onClearResult=${onClearResult}
+            />`
+      )}
+    </div>
+  `;
 }
 
 function MatchCard({ ri, mi, m, res, nameById, gamesToWin, onSetResult, onClearResult }) {
@@ -386,22 +428,22 @@ function MatchCard({ ri, mi, m, res, nameById, gamesToWin, onSetResult, onClearR
 
 const pct = (x) => `${Math.round(x * 100)}%`;
 
-function Standings({ rows }) {
+function Standings({ rows, live }) {
   if (rows.length === 0)
     return html`<div class="panel"><div class="empty">No players.</div></div>`;
   return html`
     <div class="panel">
-      <h2>Standings</h2>
+      <h2>Standings${live ? html` <span class="live-dot" title="Updates as you enter results">live</span>` : ""}</h2>
       <div class="table-wrap">
         <table class="tabular">
           <thead>
             <tr>
               <th class="rank">#</th>
               <th>Player</th>
-              <th class="num" title="Match wins — losses (byes count as wins)">
+              <th class="num" title="Match wins — losses (byes don't count as wins)">
                 W–L
               </th>
-              <th class="num" title="Byes received">Bye</th>
+              <th class="num" title="Byes received (a sit-out, not a win)">Bye</th>
               <th class="num" title="Points (1 per match win)">Pts</th>
               <th class="num" title="Game win % across all games played">
                 GW%
@@ -453,6 +495,7 @@ function Standings({ rows }) {
           <b>Beat-%</b> rewards beating strong players · <b>OMW%</b> is the
           classic opponents'-win% over everyone you faced, shown for reference.
         </div>
+        <div>A <b>bye</b> is a sit-out — it scores no points and is left out of W–L, win%, and games.</div>
       </div>
     </div>
   `;

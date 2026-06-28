@@ -54,12 +54,12 @@ export function computeStandings(players, rounds, results, gamesToWin = 1) {
       {
         id: p.id,
         name: p.name,
-        wins: 0, // match wins (incl. byes)
+        wins: 0, // match wins (real matches only — byes don't count)
         losses: 0, // match losses
-        byes: 0,
+        byes: 0, // byes received (informational; not a win)
         gamesWon: 0,
         gamesLost: 0,
-        played: 0, // decided matches incl. byes
+        played: 0, // decided real matches (byes excluded)
         beat: new Set(), // opponent ids this player defeated (real opponents)
         lostTo: new Set(),
         oppAll: new Set(), // every real opponent faced (decided or not)
@@ -91,13 +91,10 @@ export function computeStandings(players, rounds, results, gamesToWin = 1) {
   rounds.forEach((matches, ri) => {
     matches.forEach((m, mi) => {
       if (isBye(m)) {
+        // A bye is a sit-out, not a win: it earns no points and doesn't count
+        // toward matches played, win%, or games. We only track the count.
         const s = stats.get(m.a);
-        if (s) {
-          s.wins += 1;
-          s.byes += 1;
-          s.played += 1;
-          s.gamesWon += gamesToWin; // a bye is a clean win in the current format
-        }
+        if (s) s.byes += 1;
         return;
       }
       const res = results.get(`${ri}:${mi}`);
@@ -109,8 +106,7 @@ export function computeStandings(players, rounds, results, gamesToWin = 1) {
     });
   });
 
-  // Match win % for a player (byes count as wins). Min 0.33 floor is a Magic
-  // convention to avoid punishing tough schedules too hard; we keep it raw here.
+  // Match win % over real matches only (byes are excluded entirely).
   const matchWinPct = (id) => {
     const s = stats.get(id);
     if (!s || s.played === 0) return 0;
