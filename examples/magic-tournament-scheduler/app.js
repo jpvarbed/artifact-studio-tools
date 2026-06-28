@@ -26,10 +26,13 @@ const SAMPLE = [
 function App() {
   const [phase, setPhase] = useState("setup"); // "setup" | "running"
   const [raw, setRaw] = useState(SAMPLE);
+  const [bestOf, setBestOf] = useState(1); // 1 (default) | 3 | 5
   const [players, setPlayers] = useState([]);
   const [rounds, setRounds] = useState([]);
   const [results, setResults] = useState({}); // "ri:mi" -> result
   const [tab, setTab] = useState("rounds");
+
+  const gamesToWin = Math.ceil(bestOf / 2); // Bo1→1, Bo3→2, Bo5→3
 
   const parsed = useMemo(
     () =>
@@ -80,9 +83,9 @@ function App() {
   const standings = useMemo(
     () =>
       phase === "running"
-        ? computeStandings(players, rounds, resultsMap)
+        ? computeStandings(players, rounds, resultsMap, gamesToWin)
         : [],
-    [phase, players, rounds, resultsMap]
+    [phase, players, rounds, resultsMap, gamesToWin]
   );
 
   const totalMatches = rounds
@@ -127,6 +130,8 @@ function App() {
           setRaw=${setRaw}
           parsed=${parsed}
           dupes=${dupes}
+          bestOf=${bestOf}
+          setBestOf=${setBestOf}
           onGenerate=${generate}
         />`
       : html`<${Running}
@@ -138,6 +143,9 @@ function App() {
           standings=${standings}
           totalMatches=${totalMatches}
           playedMatches=${playedMatches}
+          bestOf=${bestOf}
+          setBestOf=${setBestOf}
+          gamesToWin=${gamesToWin}
           onSetResult=${setResult}
           onClearResult=${clearResult}
           onReset=${reset}
@@ -156,7 +164,27 @@ function App() {
   `;
 }
 
-function Setup({ raw, setRaw, parsed, dupes, onGenerate }) {
+// Segmented "Best of" control. Best-of-1 is the default (a single game, 1–0).
+function FormatPicker({ bestOf, setBestOf }) {
+  const opts = [1, 3, 5];
+  return html`
+    <div class="fmt" role="group" aria-label="Match format">
+      <span class="fmt-label">Best of</span>
+      ${opts.map(
+        (o) => html`<button
+          key=${o}
+          type="button"
+          class=${"fmt-btn" + (bestOf === o ? " active" : "")}
+          onClick=${() => setBestOf(o)}
+        >
+          ${o}
+        </button>`
+      )}
+    </div>
+  `;
+}
+
+function Setup({ raw, setRaw, parsed, dupes, bestOf, setBestOf, onGenerate }) {
   const n = parsed.length;
   const odd = n % 2 === 1;
   const rounds = n < 2 ? 0 : odd ? n : n - 1;
@@ -187,6 +215,9 @@ function Setup({ raw, setRaw, parsed, dupes, onGenerate }) {
         >`}
       </div>
       <div class="setup-meta">
+        <${FormatPicker} bestOf=${bestOf} setBestOf=${setBestOf} />
+      </div>
+      <div class="setup-meta">
         <button class="primary" disabled=${!canGo} onClick=${onGenerate}>
           Generate schedule →
         </button>
@@ -206,6 +237,9 @@ function Running({
   standings,
   totalMatches,
   playedMatches,
+  bestOf,
+  setBestOf,
+  gamesToWin,
   onSetResult,
   onClearResult,
   onReset,
@@ -228,6 +262,7 @@ function Running({
         </button>
       </div>
       <div class="right">
+        <${FormatPicker} bestOf=${bestOf} setBestOf=${setBestOf} />
         <span class="progress tabular"
           >${playedMatches}/${totalMatches} played</span
         >
@@ -240,6 +275,7 @@ function Running({
           rounds=${rounds}
           results=${results}
           nameById=${nameById}
+          gamesToWin=${gamesToWin}
           onSetResult=${onSetResult}
           onClearResult=${onClearResult}
         />`
@@ -248,7 +284,7 @@ function Running({
   `;
 }
 
-function Rounds({ rounds, results, nameById, onSetResult, onClearResult }) {
+function Rounds({ rounds, results, nameById, gamesToWin, onSetResult, onClearResult }) {
   return rounds.map(
     (matches, ri) => html`
       <div class="round" key=${ri}>
@@ -274,6 +310,7 @@ function Rounds({ rounds, results, nameById, onSetResult, onClearResult }) {
                 m=${m}
                 res=${results[`${ri}:${mi}`]}
                 nameById=${nameById}
+                gamesToWin=${gamesToWin}
                 onSetResult=${onSetResult}
                 onClearResult=${onClearResult}
               />`
@@ -283,7 +320,7 @@ function Rounds({ rounds, results, nameById, onSetResult, onClearResult }) {
   );
 }
 
-function MatchCard({ ri, mi, m, res, nameById, onSetResult, onClearResult }) {
+function MatchCard({ ri, mi, m, res, nameById, gamesToWin, onSetResult, onClearResult }) {
   const aName = nameById.get(m.a);
   const bName = nameById.get(m.b);
   const aWon = res && res.winner === m.a;
@@ -298,12 +335,18 @@ function MatchCard({ ri, mi, m, res, nameById, onSetResult, onClearResult }) {
 
   const scoreBtn = (winId, loseId, w, l, label) => html`
     <button
+      key=${`${winId}-${w}-${l}`}
       class=${"score-btn" + (isActive(winId, w, l) ? " active" : "")}
       onClick=${() => onSetResult(ri, mi, winId, loseId, w, l)}
     >
       ${label}
     </button>
   `;
+
+  // Possible loser-game counts for the chosen format: 0 … gamesToWin-1.
+  // Bo1 → [0] (1–0 only); Bo3 → [0,1] (2–0, 2–1); Bo5 → [0,1,2] (3–0…3–2).
+  const W = gamesToWin;
+  const losses = Array.from({ length: W }, (_, l) => l);
 
   return html`
     <div class=${"match" + (res ? " done" : "")}>
@@ -323,10 +366,12 @@ function MatchCard({ ri, mi, m, res, nameById, onSetResult, onClearResult }) {
         >
       </div>
       <div class="match-actions">
-        ${scoreBtn(m.a, m.b, 2, 0, `${aName} 2–0`)}
-        ${scoreBtn(m.a, m.b, 2, 1, `${aName} 2–1`)}
-        ${scoreBtn(m.b, m.a, 2, 1, `${bName} 2–1`)}
-        ${scoreBtn(m.b, m.a, 2, 0, `${bName} 2–0`)}
+        ${losses.map((l) =>
+          scoreBtn(m.a, m.b, W, l, `${aName} ${W}–${l}`)
+        )}
+        ${[...losses]
+          .reverse()
+          .map((l) => scoreBtn(m.b, m.a, W, l, `${bName} ${W}–${l}`))}
         ${res &&
         html`<button
           class="score-btn clear"

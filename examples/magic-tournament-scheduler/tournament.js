@@ -33,9 +33,10 @@ export function buildSchedule(playerIds) {
   return rounds;
 }
 
-// A match result records the winner and the games (best-of-3 in a draft).
+// A match result records the winner and the games. The match format is
+// "best of N" (default best-of-1, a single game → 1–0); Bo3/Bo5 are opt-in.
 // result shape: { winner: playerId, games: { [playerId]: gamesWon } } or null (unplayed).
-// A bye is auto-counted as a 2-0 match win.
+// A bye is auto-counted as a clean win (gamesToWin–0) in whatever format is set.
 
 export function isBye(match) {
   return match.b === BYE;
@@ -43,7 +44,9 @@ export function isBye(match) {
 
 // Compute full standings from players + rounds + results.
 // results: Map keyed by `${roundIdx}:${matchIdx}` → result object.
-export function computeStandings(players, rounds, results) {
+// gamesToWin: games the winner needs (1 for Bo1, 2 for Bo3, 3 for Bo5) — used
+// for bye game-credit and as the fallback when a result omits explicit games.
+export function computeStandings(players, rounds, results, gamesToWin = 1) {
   const byId = new Map(players.map((p) => [p.id, p]));
   const stats = new Map(
     players.map((p) => [
@@ -93,14 +96,14 @@ export function computeStandings(players, rounds, results) {
           s.wins += 1;
           s.byes += 1;
           s.played += 1;
-          s.gamesWon += 2; // a bye counts as a 2-0 win
+          s.gamesWon += gamesToWin; // a bye is a clean win in the current format
         }
         return;
       }
       const res = results.get(`${ri}:${mi}`);
       if (!res || !res.winner) return; // unplayed
-      const aw = res.games?.[m.a] ?? (res.winner === m.a ? 2 : 0);
-      const bw = res.games?.[m.b] ?? (res.winner === m.b ? 2 : 0);
+      const aw = res.games?.[m.a] ?? (res.winner === m.a ? gamesToWin : 0);
+      const bw = res.games?.[m.b] ?? (res.winner === m.b ? gamesToWin : 0);
       bump(m.a, m.b, res.winner === m.a, aw, bw);
       bump(m.b, m.a, res.winner === m.b, bw, aw);
     });

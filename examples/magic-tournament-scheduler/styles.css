@@ -126,6 +126,30 @@ textarea:focus {
   border-color: #3a2b52;
 }
 
+/* Best-of format picker */
+.fmt {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.fmt-label {
+  color: var(--muted);
+  font-size: 13px;
+}
+.fmt-btn {
+  padding: 6px 12px;
+  font-size: 13px;
+  background: #0b0f14;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.fmt-btn.active {
+  background: linear-gradient(180deg, #2c2438, #211a2d);
+  border-color: #4a3a66;
+  color: var(--bye);
+  font-weight: 650;
+}
+
 /* Buttons */
 button {
   font: inherit;
