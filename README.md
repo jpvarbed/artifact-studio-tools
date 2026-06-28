@@ -24,6 +24,12 @@ bun install
 
 The CLI and MCP talk to the hosted studio by default. Set `ARTIFACT_API_BASE` only if you self-host.
 
+**Behind a firewall / egress allowlist (CI, cloud agents, corp proxies)?** A publish touches **two** hosts:
+`api.artifacts.jasonv.dev` (the API — create/files/finalize) and a **storage host for file uploads**,
+currently `amiable-crocodile-777.convex.cloud` (the bytes go straight there; its URL comes back in the
+body of `POST /v1/uploads`). Allowlist **both**. (Routing uploads through our own domain is tracked in
+JAS-24 so eventually it's one host.)
+
 Now publish:
 
 ```bash
