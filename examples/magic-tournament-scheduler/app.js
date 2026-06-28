@@ -1,14 +1,11 @@
 import React, { useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
-import htm from "htm";
-import {
-  buildSchedule,
-  computeStandings,
-  isBye,
-  BYE,
-} from "./tournament.js";
+import { buildSchedule, computeStandings, isBye, BYE } from "./tournament.js";
 
-const html = htm.bind(React.createElement);
+// Plain React, no JSX and no htm — `h` is just React.createElement. Keeps the
+// app build-free (esm.sh imports) without a template-string DSL dependency.
+const h = React.createElement;
+const { Fragment } = React;
 
 let _idSeq = 0;
 const newId = () => `p${++_idSeq}`;
@@ -76,10 +73,7 @@ function App() {
     return m;
   }, [players]);
 
-  const resultsMap = useMemo(
-    () => new Map(Object.entries(results)),
-    [results]
-  );
+  const resultsMap = useMemo(() => new Map(Object.entries(results)), [results]);
 
   const standings = useMemo(
     () =>
@@ -89,9 +83,7 @@ function App() {
     [phase, players, rounds, resultsMap, gamesToWin]
   );
 
-  const totalMatches = rounds
-    .flat()
-    .filter((m) => !isBye(m)).length;
+  const totalMatches = rounds.flat().filter((m) => !isBye(m)).length;
   const playedMatches = Object.keys(results).length;
 
   function setResult(ri, mi, winnerId, loserId, w, l) {
@@ -111,78 +103,83 @@ function App() {
     });
   }
 
-  return html`
-    <${React.Fragment}>
-    <div class="app-head">
-      <div class="logo">🪄</div>
-      <div>
-        <h1>Magic Tournament Scheduler</h1>
-      </div>
-    </div>
-    <p class="subtitle">
-      Round-robin pairings for a draft pod — everyone plays everyone once.
-      Odd pod? One bye per round. Ties break on head-to-head, then strength of
-      who you beat.
-    </p>
-
-    ${phase === "setup"
-      ? html`<${Setup}
-          raw=${raw}
-          setRaw=${setRaw}
-          parsed=${parsed}
-          dupes=${dupes}
-          bestOf=${bestOf}
-          setBestOf=${setBestOf}
-          onGenerate=${generate}
-        />`
-      : html`<${Running}
-          rounds=${rounds}
-          results=${results}
-          nameById=${nameById}
-          standings=${standings}
-          totalMatches=${totalMatches}
-          playedMatches=${playedMatches}
-          currentRound=${currentRound}
-          setCurrentRound=${setCurrentRound}
-          bestOf=${bestOf}
-          setBestOf=${setBestOf}
-          gamesToWin=${gamesToWin}
-          onSetResult=${setResult}
-          onClearResult=${clearResult}
-          onReset=${reset}
-        />`}
-
-    <div class="foot-wrap">
-      <a
-        class="foot"
-        href="https://studio.artifacts.jasonv.dev"
-        target="_blank"
-        rel="noreferrer"
-        >built on Artifact Studio · in-memory, nothing is saved</a
-      >
-    </div>
-    <//>
-  `;
+  return h(
+    Fragment,
+    null,
+    h(
+      "div",
+      { className: "app-head" },
+      h("div", { className: "logo" }, "🪄"),
+      h("div", null, h("h1", null, "Magic Tournament Scheduler"))
+    ),
+    h(
+      "p",
+      { className: "subtitle" },
+      "Round-robin pairings for a draft pod — everyone plays everyone once. Odd pod? One bye per round. Ties break on head-to-head, then strength of who you beat."
+    ),
+    phase === "setup"
+      ? h(Setup, {
+          raw,
+          setRaw,
+          parsed,
+          dupes,
+          bestOf,
+          setBestOf,
+          onGenerate: generate,
+        })
+      : h(Running, {
+          rounds,
+          results,
+          nameById,
+          standings,
+          totalMatches,
+          playedMatches,
+          currentRound,
+          setCurrentRound,
+          bestOf,
+          setBestOf,
+          gamesToWin,
+          onSetResult: setResult,
+          onClearResult: clearResult,
+          onReset: reset,
+        }),
+    h(
+      "div",
+      { className: "foot-wrap" },
+      h(
+        "a",
+        {
+          className: "foot",
+          href: "https://studio.artifacts.jasonv.dev",
+          target: "_blank",
+          rel: "noreferrer",
+        },
+        "built on Artifact Studio · in-memory, nothing is saved"
+      )
+    )
+  );
 }
 
 // Segmented "Best of" control. Best-of-1 is the default (a single game, 1–0).
 function FormatPicker({ bestOf, setBestOf }) {
   const opts = [1, 3, 5];
-  return html`
-    <div class="fmt" role="group" aria-label="Match format">
-      <span class="fmt-label">Best of</span>
-      ${opts.map(
-        (o) => html`<button
-          key=${o}
-          type="button"
-          class=${"fmt-btn" + (bestOf === o ? " active" : "")}
-          onClick=${() => setBestOf(o)}
-        >
-          ${o}
-        </button>`
-      )}
-    </div>
-  `;
+  return h(
+    "div",
+    { className: "fmt", role: "group", "aria-label": "Match format" },
+    h("span", { className: "fmt-label" }, "Best of"),
+    opts.map((o) =>
+      h(
+        "button",
+        {
+          key: o,
+          type: "button",
+          className: "fmt-btn" + (bestOf === o ? " active" : ""),
+          onClick: () => setBestOf(o),
+        },
+        o
+      )
+    )
+  );
 }
 
 function Setup({ raw, setRaw, parsed, dupes, bestOf, setBestOf, onGenerate }) {
@@ -190,43 +187,45 @@ function Setup({ raw, setRaw, parsed, dupes, bestOf, setBestOf, onGenerate }) {
   const odd = n % 2 === 1;
   const rounds = n < 2 ? 0 : odd ? n : n - 1;
   const canGo = n >= 2 && dupes.size === 0;
-  return html`
-    <div class="panel">
-      <h2>Players</h2>
-      <textarea
-        value=${raw}
-        onChange=${(e) => setRaw(e.target.value)}
-        placeholder="One name per line…"
-        spellCheck=${false}
-      ></textarea>
-      <div class="setup-meta">
-        <span class="chip tabular">${n} player${n === 1 ? "" : "s"}</span>
-        ${n >= 2 &&
-        html`<span class="chip tabular">${rounds} rounds</span>`}
-        ${n >= 2 &&
-        html`<span class="chip tabular"
-          >${(n * (n - 1)) / 2} matches</span
-        >`}
-        ${odd &&
+  return h(
+    "div",
+    { className: "panel" },
+    h("h2", null, "Players"),
+    h("textarea", {
+      value: raw,
+      onChange: (e) => setRaw(e.target.value),
+      placeholder: "One name per line…",
+      spellCheck: false,
+    }),
+    h(
+      "div",
+      { className: "setup-meta" },
+      h("span", { className: "chip tabular" }, `${n} player${n === 1 ? "" : "s"}`),
+      n >= 2 && h("span", { className: "chip tabular" }, `${rounds} rounds`),
+      n >= 2 &&
+        h("span", { className: "chip tabular" }, `${(n * (n - 1)) / 2} matches`),
+      odd &&
         n >= 2 &&
-        html`<span class="chip warn">⚑ odd — one bye each round</span>`}
-        ${dupes.size > 0 &&
-        html`<span class="chip warn"
-          >duplicate name: ${[...dupes].join(", ")}</span
-        >`}
-      </div>
-      <div class="setup-meta">
-        <${FormatPicker} bestOf=${bestOf} setBestOf=${setBestOf} />
-      </div>
-      <div class="setup-meta">
-        <button class="primary" disabled=${!canGo} onClick=${onGenerate}>
-          Generate schedule →
-        </button>
-        ${n < 2 &&
-        html`<span class="muted">Add at least two players.</span>`}
-      </div>
-    </div>
-  `;
+        h("span", { className: "chip warn" }, "⚑ odd — one bye each round"),
+      dupes.size > 0 &&
+        h(
+          "span",
+          { className: "chip warn" },
+          `duplicate name: ${[...dupes].join(", ")}`
+        )
+    ),
+    h("div", { className: "setup-meta" }, h(FormatPicker, { bestOf, setBestOf })),
+    h(
+      "div",
+      { className: "setup-meta" },
+      h(
+        "button",
+        { className: "primary", disabled: !canGo, onClick: onGenerate },
+        "Generate schedule →"
+      ),
+      n < 2 && h("span", { className: "muted" }, "Add at least two players.")
+    )
+  );
 }
 
 // How many real (non-bye) matches a round has, and how many have a result.
@@ -262,107 +261,158 @@ function Running({
   const matches = rounds[ri] || [];
   const { real, done, complete } = roundProgress(matches, results, ri);
 
-  return html`
-    <${React.Fragment}>
-    <div class="toolbar">
-      <div class="rnav">
-        <button
-          class="ghost"
-          disabled=${ri === 0}
-          onClick=${() => setCurrentRound(ri - 1)}
-          aria-label="Previous round"
-        >
-          ‹
-        </button>
-        <span class="rnav-label">Round <b>${ri + 1}</b> <span class="muted">/ ${nRounds}</span></span>
-        <button
-          class="ghost"
-          disabled=${ri >= nRounds - 1}
-          onClick=${() => setCurrentRound(ri + 1)}
-          aria-label="Next round"
-        >
-          ›
-        </button>
-      </div>
-      <div class="right">
-        <${FormatPicker} bestOf=${bestOf} setBestOf=${setBestOf} />
-        <button class="ghost danger" onClick=${onReset}>New tournament</button>
-      </div>
-    </div>
-
-    <div class="round-dots">
-      ${rounds.map((rm, i) => {
+  return h(
+    Fragment,
+    null,
+    h(
+      "div",
+      { className: "toolbar" },
+      h(
+        "div",
+        { className: "rnav" },
+        h(
+          "button",
+          {
+            className: "ghost",
+            disabled: ri === 0,
+            onClick: () => setCurrentRound(ri - 1),
+            "aria-label": "Previous round",
+          },
+          "‹"
+        ),
+        h(
+          "span",
+          { className: "rnav-label" },
+          "Round ",
+          h("b", null, ri + 1),
+          " ",
+          h("span", { className: "muted" }, `/ ${nRounds}`)
+        ),
+        h(
+          "button",
+          {
+            className: "ghost",
+            disabled: ri >= nRounds - 1,
+            onClick: () => setCurrentRound(ri + 1),
+            "aria-label": "Next round",
+          },
+          "›"
+        )
+      ),
+      h(
+        "div",
+        { className: "right" },
+        h(FormatPicker, { bestOf, setBestOf }),
+        h(
+          "button",
+          { className: "ghost danger", onClick: onReset },
+          "New tournament"
+        )
+      )
+    ),
+    h(
+      "div",
+      { className: "round-dots" },
+      rounds.map((rm, i) => {
         const p = roundProgress(rm, results, i);
-        return html`<button
-          key=${i}
-          class=${"rdot" + (i === ri ? " active" : "") + (p.complete ? " done" : "")}
-          onClick=${() => setCurrentRound(i)}
-          title=${`Round ${i + 1} — ${p.done}/${p.real} entered`}
-        >
-          ${i + 1}
-        </button>`;
-      })}
-    </div>
-
-    <${RoundPanel}
-      ri=${ri}
-      matches=${matches}
-      results=${results}
-      nameById=${nameById}
-      gamesToWin=${gamesToWin}
-      onSetResult=${onSetResult}
-      onClearResult=${onClearResult}
-    />
-
-    <div class="round-foot">
-      <span class="progress tabular"
-        >${done}/${real} this round · ${playedMatches}/${totalMatches} overall</span
-      >
-      ${ri < nRounds - 1 &&
-      html`<button
-        class=${"primary next-round" + (complete ? "" : " ghosted")}
-        onClick=${() => setCurrentRound(ri + 1)}
-      >
-        ${complete ? `Round ${ri + 2} →` : "Skip to next round →"}
-      </button>`}
-    </div>
-
-    <${Standings} rows=${standings} live=${true} />
-    <//>
-  `;
+        return h(
+          "button",
+          {
+            key: i,
+            className:
+              "rdot" + (i === ri ? " active" : "") + (p.complete ? " done" : ""),
+            onClick: () => setCurrentRound(i),
+            title: `Round ${i + 1} — ${p.done}/${p.real} entered`,
+          },
+          i + 1
+        );
+      })
+    ),
+    h(RoundPanel, {
+      ri,
+      matches,
+      results,
+      nameById,
+      gamesToWin,
+      onSetResult,
+      onClearResult,
+    }),
+    h(
+      "div",
+      { className: "round-foot" },
+      h(
+        "span",
+        { className: "progress tabular" },
+        `${done}/${real} this round · ${playedMatches}/${totalMatches} overall`
+      ),
+      ri < nRounds - 1 &&
+        h(
+          "button",
+          {
+            className: "primary next-round" + (complete ? "" : " ghosted"),
+            onClick: () => setCurrentRound(ri + 1),
+          },
+          complete ? `Round ${ri + 2} →` : "Skip to next round →"
+        )
+    ),
+    h(Standings, { rows: standings, live: true })
+  );
 }
 
-function RoundPanel({ ri, matches, results, nameById, gamesToWin, onSetResult, onClearResult }) {
-  return html`
-    <div class="round">
-      ${matches.map((m, mi) =>
-        isBye(m)
-          ? html`<div class="match bye" key=${mi}>
-              <div class="side">
-                <span class="pname">${nameById.get(m.a)}</span>
-              </div>
-              <span class="vs">—</span>
-              <div class="side right">
-                <span class="bye-tag">BYE · sits out</span>
-              </div>
-            </div>`
-          : html`<${MatchCard}
-              key=${mi}
-              ri=${ri}
-              mi=${mi}
-              m=${m}
-              res=${results[`${ri}:${mi}`]}
-              nameById=${nameById}
-              gamesToWin=${gamesToWin}
-              onSetResult=${onSetResult}
-              onClearResult=${onClearResult}
-            />`
-      )}
-    </div>
-  `;
+function RoundPanel({
+  ri,
+  matches,
+  results,
+  nameById,
+  gamesToWin,
+  onSetResult,
+  onClearResult,
+}) {
+  return h(
+    "div",
+    { className: "round" },
+    matches.map((m, mi) =>
+      isBye(m)
+        ? h(
+            "div",
+            { className: "match bye", key: mi },
+            h(
+              "div",
+              { className: "side" },
+              h("span", { className: "pname" }, nameById.get(m.a))
+            ),
+            h("span", { className: "vs" }, "—"),
+            h(
+              "div",
+              { className: "side right" },
+              h("span", { className: "bye-tag" }, "BYE · sits out")
+            )
+          )
+        : h(MatchCard, {
+            key: mi,
+            ri,
+            mi,
+            m,
+            res: results[`${ri}:${mi}`],
+            nameById,
+            gamesToWin,
+            onSetResult,
+            onClearResult,
+          })
+    )
+  );
 }
 
-function MatchCard({ ri, mi, m, res, nameById, gamesToWin, onSetResult, onClearResult }) {
+function MatchCard({
+  ri,
+  mi,
+  m,
+  res,
+  nameById,
+  gamesToWin,
+  onSetResult,
+  onClearResult,
+}) {
   const aName = nameById.get(m.a);
   const bName = nameById.get(m.b);
   const aWon = res && res.winner === m.a;
@@ -375,130 +425,204 @@ function MatchCard({ ri, mi, m, res, nameById, gamesToWin, onSetResult, onClearR
     res.games?.[winId] === w &&
     res.games?.[winId === m.a ? m.b : m.a] === l;
 
-  const scoreBtn = (winId, loseId, w, l, label) => html`
-    <button
-      key=${`${winId}-${w}-${l}`}
-      class=${"score-btn" + (isActive(winId, w, l) ? " active" : "")}
-      onClick=${() => onSetResult(ri, mi, winId, loseId, w, l)}
-    >
-      ${label}
-    </button>
-  `;
+  const scoreBtn = (winId, loseId, w, l, label) =>
+    h(
+      "button",
+      {
+        key: `${winId}-${w}-${l}`,
+        className: "score-btn" + (isActive(winId, w, l) ? " active" : ""),
+        onClick: () => onSetResult(ri, mi, winId, loseId, w, l),
+      },
+      label
+    );
 
   // Possible loser-game counts for the chosen format: 0 … gamesToWin-1.
   // Bo1 → [0] (1–0 only); Bo3 → [0,1] (2–0, 2–1); Bo5 → [0,1,2] (3–0…3–2).
   const W = gamesToWin;
   const losses = Array.from({ length: W }, (_, l) => l);
 
-  return html`
-    <div class=${"match" + (res ? " done" : "")}>
-      <div class="side">
-        <span
-          class=${"pname " + (aWon ? "winner" : bWon ? "loser" : "")}
-          >${aName}</span
-        >
-        ${res && html`<span class="muted tabular">${aGames}</span>`}
-      </div>
-      <span class="vs">VS</span>
-      <div class="side right">
-        ${res && html`<span class="muted tabular">${bGames}</span>`}
-        <span
-          class=${"pname " + (bWon ? "winner" : aWon ? "loser" : "")}
-          >${bName}</span
-        >
-      </div>
-      <div class="match-actions">
-        ${losses.map((l) =>
-          scoreBtn(m.a, m.b, W, l, `${aName} ${W}–${l}`)
-        )}
-        ${[...losses]
-          .reverse()
-          .map((l) => scoreBtn(m.b, m.a, W, l, `${bName} ${W}–${l}`))}
-        ${res &&
-        html`<button
-          class="score-btn clear"
-          onClick=${() => onClearResult(ri, mi)}
-        >
-          clear
-        </button>`}
-      </div>
-    </div>
-  `;
+  return h(
+    "div",
+    { className: "match" + (res ? " done" : "") },
+    h(
+      "div",
+      { className: "side" },
+      h(
+        "span",
+        { className: "pname " + (aWon ? "winner" : bWon ? "loser" : "") },
+        aName
+      ),
+      res && h("span", { className: "muted tabular" }, aGames)
+    ),
+    h("span", { className: "vs" }, "VS"),
+    h(
+      "div",
+      { className: "side right" },
+      res && h("span", { className: "muted tabular" }, bGames),
+      h(
+        "span",
+        { className: "pname " + (bWon ? "winner" : aWon ? "loser" : "") },
+        bName
+      )
+    ),
+    h(
+      "div",
+      { className: "match-actions" },
+      losses.map((l) => scoreBtn(m.a, m.b, W, l, `${aName} ${W}–${l}`)),
+      [...losses]
+        .reverse()
+        .map((l) => scoreBtn(m.b, m.a, W, l, `${bName} ${W}–${l}`)),
+      res &&
+        h(
+          "button",
+          {
+            className: "score-btn clear",
+            onClick: () => onClearResult(ri, mi),
+          },
+          "clear"
+        )
+    )
+  );
 }
 
 const pct = (x) => `${Math.round(x * 100)}%`;
 
 function Standings({ rows, live }) {
   if (rows.length === 0)
-    return html`<div class="panel"><div class="empty">No players.</div></div>`;
-  return html`
-    <div class="panel">
-      <h2>Standings${live ? html` <span class="live-dot" title="Updates as you enter results">live</span>` : ""}</h2>
-      <div class="table-wrap">
-        <table class="tabular">
-          <thead>
-            <tr>
-              <th class="rank">#</th>
-              <th>Player</th>
-              <th class="num" title="Match wins — losses (byes don't count as wins)">
-                W–L
-              </th>
-              <th class="num" title="Byes received (a sit-out, not a win)">Bye</th>
-              <th class="num" title="Points (1 per match win)">Pts</th>
-              <th class="num" title="Game win % across all games played">
-                GW%
-              </th>
-              <th
-                class="num"
-                title="Tiebreaker: average match-win% of the opponents you BEAT"
-              >
-                Beat-%
-              </th>
-              <th
-                class="num"
-                title="Opponents' match-win% across everyone you faced (info)"
-              >
-                OMW%
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rows.map(
-              (r) => html`
-                <tr key=${r.id}>
-                  <td class=${"rank" + (r.rank === 1 ? " top" : "")}>
-                    ${r.rank}
-                  </td>
-                  <td>${r.name}</td>
-                  <td class="num wl">
-                    <span class="w">${r.wins}</span>–<span class="l"
-                      >${r.losses}</span
-                    >
-                  </td>
-                  <td class="num muted">${r.byes || ""}</td>
-                  <td class="num pts">${r.points}</td>
-                  <td class="num muted">${pct(r.gameWinPct)}</td>
-                  <td class="num">${pct(r.beatenStrength)}</td>
-                  <td class="num muted">${pct(r.omw)}</td>
-                </tr>
-              `
-            )}
-          </tbody>
-        </table>
-      </div>
-      <div class="legend">
-        <div>
-          <b>Sort order:</b> points, then head-to-head among tied players, then
-          <b>Beat-%</b> (the win-rate of the players you beat).
-        </div>
-        <div>
-          <b>Beat-%</b> rewards beating strong players · <b>OMW%</b> is the
-          classic opponents'-win% over everyone you faced, shown for reference.
-        </div>
-        <div>A <b>bye</b> is a sit-out — it scores no points and is left out of W–L, win%, and games.</div>
-      </div>
-    </div>
-  `;
+    return h(
+      "div",
+      { className: "panel" },
+      h("div", { className: "empty" }, "No players.")
+    );
+  return h(
+    "div",
+    { className: "panel" },
+    h(
+      "h2",
+      null,
+      "Standings",
+      live &&
+        h(
+          "span",
+          { className: "live-dot", title: "Updates as you enter results" },
+          "live"
+        )
+    ),
+    h(
+      "div",
+      { className: "table-wrap" },
+      h(
+        "table",
+        { className: "tabular" },
+        h(
+          "thead",
+          null,
+          h(
+            "tr",
+            null,
+            h("th", { className: "rank" }, "#"),
+            h("th", null, "Player"),
+            h(
+              "th",
+              {
+                className: "num",
+                title: "Match wins — losses (byes don't count as wins)",
+              },
+              "W–L"
+            ),
+            h(
+              "th",
+              { className: "num", title: "Byes received (a sit-out, not a win)" },
+              "Bye"
+            ),
+            h(
+              "th",
+              { className: "num", title: "Points (1 per match win)" },
+              "Pts"
+            ),
+            h(
+              "th",
+              { className: "num", title: "Game win % across all games played" },
+              "GW%"
+            ),
+            h(
+              "th",
+              {
+                className: "num",
+                title:
+                  "Tiebreaker: average match-win% of the opponents you BEAT",
+              },
+              "Beat-%"
+            ),
+            h(
+              "th",
+              {
+                className: "num",
+                title:
+                  "Opponents' match-win% across everyone you faced (info)",
+              },
+              "OMW%"
+            )
+          )
+        ),
+        h(
+          "tbody",
+          null,
+          rows.map((r) =>
+            h(
+              "tr",
+              { key: r.id },
+              h(
+                "td",
+                { className: "rank" + (r.rank === 1 ? " top" : "") },
+                r.rank
+              ),
+              h("td", null, r.name),
+              h(
+                "td",
+                { className: "num wl" },
+                h("span", { className: "w" }, r.wins),
+                "–",
+                h("span", { className: "l" }, r.losses)
+              ),
+              h("td", { className: "num muted" }, r.byes || ""),
+              h("td", { className: "num pts" }, r.points),
+              h("td", { className: "num muted" }, pct(r.gameWinPct)),
+              h("td", { className: "num" }, pct(r.beatenStrength)),
+              h("td", { className: "num muted" }, pct(r.omw))
+            )
+          )
+        )
+      )
+    ),
+    h(
+      "div",
+      { className: "legend" },
+      h(
+        "div",
+        null,
+        h("b", null, "Sort order:"),
+        " points, then head-to-head among tied players, then ",
+        h("b", null, "Beat-%"),
+        " (the win-rate of the players you beat)."
+      ),
+      h(
+        "div",
+        null,
+        h("b", null, "Beat-%"),
+        " rewards beating strong players · ",
+        h("b", null, "OMW%"),
+        " is the classic opponents'-win% over everyone you faced, shown for reference."
+      ),
+      h(
+        "div",
+        null,
+        "A ",
+        h("b", null, "bye"),
+        " is a sit-out — it scores no points and is left out of W–L, win%, and games."
+      )
+    )
+  );
 }
 
-createRoot(document.getElementById("root")).render(html`<${App} />`);
+createRoot(document.getElementById("root")).render(h(App, null));

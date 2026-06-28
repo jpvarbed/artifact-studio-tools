@@ -20,4 +20,4 @@ Enter player names, pick a match format (best-of-1 by default; best-of-3 or best
 
 ## Notes for agents
 - Core logic is pure and isolated in `tournament.js` (`buildSchedule`, `computeStandings`, `sortStandings`) with no React/DOM deps — import it directly to test or reuse.
-- No-build app: htm + esm.sh, no bundler. `index.html` is the entry.
+- No-build app: React via esm.sh import maps, no bundler and no JSX/htm — components use `React.createElement` (aliased `h`). `index.html` is the entry.
