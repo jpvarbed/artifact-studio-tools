@@ -1,0 +1,23 @@
+# Magic Tournament Scheduler
+
+> Round-robin tournament scheduler for Magic: The Gathering drafts (a pod of 1v1 matches). Everyone plays everyone exactly once; standings rank by wins with head-to-head and strength-of-victory tiebreakers.
+
+Enter player names, pick a match format (best-of-1 by default; best-of-3 or best-of-5 optional), generate a single round-robin schedule, then step through the rounds one at a time recording results. Standings sit below the current round and update live as you enter each result. Odd player counts get one bye per round (each player byes exactly once); a bye is a sit-out — it scores nothing and is excluded from W–L, win%, and games. All state is in memory only — nothing is persisted, a refresh starts over.
+
+## Routes
+- `/` — the whole app. Two phases: Setup (enter players) → Running: a round-by-round stepper (‹ / › nav + clickable round dots) with the current round's pairings on top and a live Standings table below.
+
+## How it works
+- **Scheduling:** circle method. N players → N−1 rounds (even) or N rounds (odd, via a phantom bye). Produces every C(N,2) pairing once.
+- **Format:** "Best of" picker (1 / 3 / 5), default 1. Sets how many games win a match (Bo1→1, Bo3→2, Bo5→3) and which score buttons appear. Changeable on Setup or mid-tournament from the toolbar.
+- **Entry:** round by round. Navigate with ‹ / ›, the numbered round dots (green = all results in), or the "next round" button. You can revisit any round to fix a result; nothing is locked.
+- **Results:** per match, pick the winner and game score for the format (e.g. 1–0 at Bo1; 2–0 / 2–1 at Bo3). Byes are sit-outs, not wins.
+- **Standings sort:** (1) points = match wins (byes excluded); (2) head-to-head — resolved as a mini-league among only the players tied on points (handles 2-way and N-way ties); (3) **Beat-%** — average match-win% of the opponents you defeated (the user's "win % of the people you beat"). Name is the final stable tiebreak.
+- **Extra columns:** GW% (game-win%), OMW% (classic opponents' match-win% over everyone faced, shown for reference, not used in sorting).
+
+## Data API
+- None. No backend; state lives in browser memory for the session only.
+
+## Notes for agents
+- Core logic is pure and isolated in `tournament.js` (`buildSchedule`, `computeStandings`, `sortStandings`) with no React/DOM deps — import it directly to test or reuse.
+- No-build app: React via esm.sh import maps, no bundler and no JSX/htm — components use `React.createElement` (aliased `h`). `index.html` is the entry.
